@@ -1,5 +1,6 @@
 using Application;
 using Infrastructure;
+using Presentation.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,7 +15,7 @@ builder.Services.AddInfrastructureLayer(builder.Configuration);
 
 var app = builder.Build();
 
-app.UseExceptionHandler();
+app.UseExceptionHandlerMw();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

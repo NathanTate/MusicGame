@@ -33,10 +33,19 @@ public class ExceptionHandlerMiddleware
             _ => StatusCodes.Status500InternalServerError
         };
 
-        await httpContext.Response.WriteAsJsonAsync(exception.Message);
-    }
+        var response = new
+        {
+            exception,
+            exception.Message
+        };
 
-    public static IApplicationBuilder UseExceptionHandler(this IApplicationBuilder builder)
+        await httpContext.Response.WriteAsJsonAsync(response);
+    }
+}
+
+public static class ExceptionHandlerMiddlewareExtensions
+{
+    public static IApplicationBuilder UseExceptionHandlerMw(this IApplicationBuilder builder)
     {
         return builder.UseMiddleware<ExceptionHandlerMiddleware>();
     }
