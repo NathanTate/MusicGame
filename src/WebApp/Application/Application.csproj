@@ -19,7 +19,6 @@
     <Folder Include="DTO\Song\" />
     <Folder Include="DTO\Playlist\" />
     <Folder Include="DTO\Photo\" />
-    <Folder Include="Interfaces\" />
   </ItemGroup>
 
   <ItemGroup>

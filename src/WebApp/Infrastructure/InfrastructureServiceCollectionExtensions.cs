@@ -9,6 +9,7 @@ using Infrastructure.ExternalProviders;
 using Application.InfrastructureInterfaces;
 using Microsoft.AspNetCore.Identity;
 using Domain.Primitives;
+using Infrastructure.Repositories;
 
 namespace Infrastructure;
 public static class InfrastructureServiceCollectionExtensions
@@ -57,6 +58,7 @@ public static class InfrastructureServiceCollectionExtensions
     private static IServiceCollection AddServiceCollections(this IServiceCollection services)
     {
         services.AddSingleton<IEmailSender, EmailSender>();
+        services.AddScoped<IGenreRepository, GenreRepository>();
 
         return services;
     }

@@ -6,6 +6,8 @@ using System.Text;
 using Microsoft.Extensions.Configuration;
 using Domain.Primitives;
 using Application.Services.Auth;
+using Application.Interfaces;
+using Application.Services;
 
 namespace Application;
 public static class ApplicationServiceCollectionExtensions
@@ -49,6 +51,7 @@ public static class ApplicationServiceCollectionExtensions
     private static IServiceCollection AddServiceCollections(this IServiceCollection services)
     {
         services.AddScoped<IAuthenticationService, AuthenticationService>();
+        services.AddScoped<IGenreService, GenreService>();
 
         return services;
     }
