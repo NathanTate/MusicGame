@@ -10,11 +10,16 @@
     <PackageReference Include="AutoMapper" Version="13.0.1" />
     <PackageReference Include="FluentResults" Version="3.16.0" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.10.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Common\Exceptions\" />
-    <Folder Include="Common\Helpers\" />
+    <Folder Include="DTO\Genre\" />
+    <Folder Include="DTO\Song\" />
+    <Folder Include="DTO\Playlist\" />
+    <Folder Include="DTO\Photo\" />
+    <Folder Include="Interfaces\" />
   </ItemGroup>
 
   <ItemGroup>

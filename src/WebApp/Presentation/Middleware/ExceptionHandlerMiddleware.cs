@@ -35,8 +35,9 @@ public class ExceptionHandlerMiddleware
 
         var response = new
         {
-            exception,
-            exception.Message
+            Title = "Unexprected exception occured",
+            exception.Message,
+            exception.InnerException
         };
 
         await httpContext.Response.WriteAsJsonAsync(response);
