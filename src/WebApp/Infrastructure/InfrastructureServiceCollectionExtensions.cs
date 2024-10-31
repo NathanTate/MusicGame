@@ -1,18 +1,25 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Domain.Entities;
-using Application.Common.Interfaces;
 using Infrastructure.Interceptors;
+using Infrastructure.Context;
+using Infrastructure.ExternalProviders;
+using Application.InfrastructureInterfaces;
+using Microsoft.AspNetCore.Identity;
+using Domain.Primitives;
 
 namespace Infrastructure;
 public static class InfrastructureServiceCollectionExtensions
 {
     public static IServiceCollection AddInfrastructureLayer(this IServiceCollection services, IConfiguration configuration)
     {
+        services.Configure<SmtpSettings>(configuration.GetSection("SmtpSettings"));
+
         services.AddAppDbContext(configuration);
         services.AddIdentity();
+        services.AddServiceCollections();
 
         return services;
     }
@@ -21,7 +28,7 @@ public static class InfrastructureServiceCollectionExtensions
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection");
 
-        return services.AddDbContext<IAppDbContext, AppDbContext>(options =>
+        return services.AddDbContext<AppDbContext>(options =>
         {
             options
                 .UseSqlServer(connectionString)
@@ -31,7 +38,6 @@ public static class InfrastructureServiceCollectionExtensions
 
     private static IServiceCollection AddIdentity(this IServiceCollection services)
     {
-
         services.AddIdentityCore<User>(options =>
         {
             options.Password.RequireNonAlphanumeric = true;
@@ -40,10 +46,17 @@ public static class InfrastructureServiceCollectionExtensions
             options.Password.RequireDigit = true;
             options.Password.RequiredLength = 6;
             options.User.RequireUniqueEmail = true;
-            options.Stores.MaxLengthForKeys = 128;
         })
             .AddRoles<IdentityRole>()
-            .AddEntityFrameworkStores<AppDbContext>();
+            .AddEntityFrameworkStores<AppDbContext>()
+            .AddDefaultTokenProviders();
+
+        return services;
+    }
+
+    private static IServiceCollection AddServiceCollections(this IServiceCollection services)
+    {
+        services.AddSingleton<IEmailSender, EmailSender>();
 
         return services;
     }
