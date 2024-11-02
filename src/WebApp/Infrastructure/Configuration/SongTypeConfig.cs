@@ -8,6 +8,13 @@ internal class SongTypeConfig : IEntityTypeConfiguration<Song>
     public void Configure(EntityTypeBuilder<Song> builder)
     {
         builder
+            .HasQueryFilter(b => !b.isDeleted);
+
+        builder
+            .HasIndex(b => b.isDeleted)
+            .HasFilter("IsDeleted = 0");
+
+        builder
             .HasKey(b => b.SongId);
 
         builder

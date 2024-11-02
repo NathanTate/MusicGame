@@ -8,6 +8,13 @@ internal class PlaylistTypeConfig : IEntityTypeConfiguration<Playlist>
     public void Configure(EntityTypeBuilder<Playlist> builder)
     {
         builder
+            .HasQueryFilter(b => !b.isDeleted);
+
+        builder
+            .HasIndex(b => b.isDeleted)
+            .HasFilter("IsDeleted = 0");
+
+        builder
             .HasKey(b => b.PlaylistId);
 
         builder

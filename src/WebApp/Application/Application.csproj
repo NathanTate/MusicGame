@@ -15,10 +15,9 @@
 
   <ItemGroup>
     <Folder Include="Common\Exceptions\" />
-    <Folder Include="DTO\Genre\" />
-    <Folder Include="DTO\Song\" />
-    <Folder Include="DTO\Playlist\" />
-    <Folder Include="DTO\Photo\" />
+    <Folder Include="DTO\Songs\" />
+    <Folder Include="DTO\Playlists\" />
+    <Folder Include="DTO\Photos\" />
   </ItemGroup>
 
   <ItemGroup>

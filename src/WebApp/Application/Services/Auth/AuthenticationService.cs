@@ -1,4 +1,4 @@
-﻿using Application.DTO.User;
+﻿using Application.DTO.Users;
 using Application.InfrastructureInterfaces;
 using Domain.Entities;
 using Domain.Enums;

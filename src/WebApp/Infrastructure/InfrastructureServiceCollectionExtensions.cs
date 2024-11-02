@@ -1,5 +1,4 @@
-﻿
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Domain.Entities;
@@ -58,7 +57,7 @@ public static class InfrastructureServiceCollectionExtensions
     private static IServiceCollection AddServiceCollections(this IServiceCollection services)
     {
         services.AddSingleton<IEmailSender, EmailSender>();
-        services.AddScoped<IGenreRepository, GenreRepository>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;
     }

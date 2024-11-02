@@ -1,6 +1,6 @@
 ﻿using Application.Common.Helpers;
 using Application.DTO;
-using Application.DTO.User;
+using Application.DTO.Users;
 using Application.Services.Auth;
 using FluentResults;
 using FluentValidation;
