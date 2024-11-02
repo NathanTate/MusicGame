@@ -30,14 +30,15 @@ public class ExceptionHandlerMiddleware
 
         httpContext.Response.StatusCode = exception switch
         {
+            OperationCanceledException => StatusCodes.Status499ClientClosedRequest,
+            InvalidOperationException => StatusCodes.Status400BadRequest,
             _ => StatusCodes.Status500InternalServerError
         };
 
         var response = new
         {
             Title = "Unexprected exception occured",
-            exception.Message,
-            exception.InnerException
+            exception.Message
         };
 
         await httpContext.Response.WriteAsJsonAsync(response);

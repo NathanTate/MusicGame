@@ -1,5 +1,4 @@
-﻿
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Domain.Entities;
@@ -9,6 +8,7 @@ using Infrastructure.ExternalProviders;
 using Application.InfrastructureInterfaces;
 using Microsoft.AspNetCore.Identity;
 using Domain.Primitives;
+using Infrastructure.Repositories;
 
 namespace Infrastructure;
 public static class InfrastructureServiceCollectionExtensions
@@ -57,6 +57,7 @@ public static class InfrastructureServiceCollectionExtensions
     private static IServiceCollection AddServiceCollections(this IServiceCollection services)
     {
         services.AddSingleton<IEmailSender, EmailSender>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;
     }

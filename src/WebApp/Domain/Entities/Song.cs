@@ -1,5 +1,7 @@
-﻿namespace Domain.Entities;
-public class Song
+﻿using Domain.Primitives;
+
+namespace Domain.Entities;
+public class Song : ISoftDeletable
 {
     public int SongId { get; set; }
     public string Name { get; set; } = null!;
@@ -7,6 +9,8 @@ public class Song
     public int LikesCount { get; set; } = default;
     public int Duration { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public bool isDeleted { get; set; }
+    public DateTime? DeletedOnUtc { get; set; }
 
     public List<Genre> Genres { get; } = [];
     public List<Playlist> Playlists { get; } = [];

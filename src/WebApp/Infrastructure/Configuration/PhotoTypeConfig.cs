@@ -8,6 +8,13 @@ internal class PhotoTypeConfig : IEntityTypeConfiguration<Photo>
     public void Configure(EntityTypeBuilder<Photo> builder)
     {
         builder
+            .HasQueryFilter(b => !b.isDeleted);
+
+        builder
+            .HasIndex(b => b.isDeleted)
+            .HasFilter("IsDeleted = 0");
+
+        builder
             .HasKey(b => b.PhotoId);
 
         builder

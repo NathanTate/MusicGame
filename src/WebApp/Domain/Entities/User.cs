@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Domain.Primitives;
+using Microsoft.AspNetCore.Identity;
 
 namespace Domain.Entities;
-public class User : IdentityUser
+public class User : IdentityUser, ISoftDeletable
 {
     public new string Email
     {
@@ -13,6 +14,8 @@ public class User : IdentityUser
     public string? RefreshToken { get; set; }
     public DateTime? RefreshTokenExpiryTime { get; set; }
     public List<string> Roles { get; set; } = [];
+    public bool isDeleted { get; set; }
+    public DateTime? DeletedOnUtc { get; set; }
 
     public List<Playlist> Playlists { get; } = [];
     public List<Song> Songs { get; } = [];
