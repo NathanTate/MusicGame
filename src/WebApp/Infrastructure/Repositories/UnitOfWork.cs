@@ -8,12 +8,14 @@ internal class UnitOfWork : IUnitOfWork
 {
     private readonly AppDbContext _dbContext;
     private IGenreRepository? _genreRepository;
+    private ISongRepository? _songRepository;
     public UnitOfWork(AppDbContext dbContext)
     {
         _dbContext = dbContext;
     }
 
     public IGenreRepository GenreRepository { get => _genreRepository ??= new GenreRepository(_dbContext); }
+    public ISongRepository SongRepository { get => _songRepository ??= new SongRepository(_dbContext); }
 
     public async Task<bool> ExistsAsync<TEntity>(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default) where TEntity : class
     {

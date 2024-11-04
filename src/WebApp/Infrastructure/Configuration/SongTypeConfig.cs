@@ -27,11 +27,24 @@ internal class SongTypeConfig : IEntityTypeConfiguration<Song>
             .IsRequired();
 
         builder
-            .Property(b => b.Path)
+            .Property(b => b.Url)
             .IsRequired();
+
+        builder
+            .Property(b => b.LikesCount)
+            .HasDefaultValue(0);
 
         builder.
             Property(b => b.Duration)
+            .IsRequired();
+
+        builder
+            .Property(b => b.Size)
+            .IsRequired();
+
+        builder
+            .Property(b => b.ContentType)
+            .HasMaxLength(30)
             .IsRequired();
 
         builder

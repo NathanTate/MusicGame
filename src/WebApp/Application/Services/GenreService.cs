@@ -32,7 +32,7 @@ internal class GenreService : IGenreService
             return Result.Fail($"Genre with Id - {genreId} was not found");
         }
 
-        return _mapper.Map<GenreResponse>(genre);
+        return Result.Ok(_mapper.Map<GenreResponse>(genre));
     }
 
     public async Task<Result<GenreResponse>> CreateGenreAsync(CreateGenreRequest model, CancellationToken cancellationToken = default)
@@ -50,7 +50,7 @@ internal class GenreService : IGenreService
 
         await _uow.SaveChangesAsync(cancellationToken);
 
-        return _mapper.Map<GenreResponse>(createdGenre);
+        return Result.Ok(_mapper.Map<GenreResponse>(createdGenre));
     }
 
     public async Task<Result<GenreResponse>> UpdateGenreAsync(UpdateGenreRequest model, CancellationToken cancellationToken = default)
@@ -68,7 +68,7 @@ internal class GenreService : IGenreService
 
         await _uow.SaveChangesAsync(cancellationToken);
 
-        return _mapper.Map<GenreResponse>(updatedGenre);
+        return Result.Ok(_mapper.Map<GenreResponse>(updatedGenre));
     }
 
     public async Task<Result> DeleteGenreAsync(int genreId, CancellationToken cancellationToken = default)
