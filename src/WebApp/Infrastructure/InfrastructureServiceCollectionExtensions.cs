@@ -41,7 +41,6 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddIdentityCore<User>(options =>
         {
             options.Password.RequireNonAlphanumeric = true;
-            options.Password.RequireLowercase = true;
             options.Password.RequireUppercase = true;
             options.Password.RequireDigit = true;
             options.Password.RequiredLength = 6;
