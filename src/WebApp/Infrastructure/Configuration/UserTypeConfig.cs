@@ -1,13 +1,19 @@
 ﻿using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System.Reflection.Emit;
 
 namespace Infrastructure.Configuration;
 internal class UserTypeConfig : IEntityTypeConfiguration<User>
 {
     public void Configure(EntityTypeBuilder<User> builder)
     {
+        builder
+            .HasQueryFilter(b => !b.isDeleted);
+
+        builder
+            .HasIndex(b => b.isDeleted)
+            .HasFilter("IsDeleted = 0");
+
         builder
             .Property(b => b.Id)
             .HasMaxLength(128);

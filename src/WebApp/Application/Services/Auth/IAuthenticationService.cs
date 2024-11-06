@@ -1,4 +1,4 @@
-﻿using Application.DTO.User;
+﻿using Application.DTO.Users;
 using Domain.Entities;
 using FluentResults;
 

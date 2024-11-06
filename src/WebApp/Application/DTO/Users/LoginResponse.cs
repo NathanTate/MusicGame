@@ -1,8 +1,10 @@
-﻿namespace Application.DTO.User;
+﻿using Domain.Entities;
+
+namespace Application.DTO.Users;
 
 public sealed class LoginResponse
 {
-    public LoginResponse(Domain.Entities.User user, TokenDto tokens)
+    public LoginResponse(User user, TokenDto tokens)
     {
         UserId = user.Id;
         Email = user.Email!;

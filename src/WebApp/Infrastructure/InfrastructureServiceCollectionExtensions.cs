@@ -1,5 +1,4 @@
-﻿
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Domain.Entities;
@@ -9,6 +8,7 @@ using Infrastructure.ExternalProviders;
 using Application.InfrastructureInterfaces;
 using Microsoft.AspNetCore.Identity;
 using Domain.Primitives;
+using Infrastructure.Repositories;
 
 namespace Infrastructure;
 public static class InfrastructureServiceCollectionExtensions
@@ -41,7 +41,6 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddIdentityCore<User>(options =>
         {
             options.Password.RequireNonAlphanumeric = true;
-            options.Password.RequireLowercase = true;
             options.Password.RequireUppercase = true;
             options.Password.RequireDigit = true;
             options.Password.RequiredLength = 6;
@@ -57,6 +56,7 @@ public static class InfrastructureServiceCollectionExtensions
     private static IServiceCollection AddServiceCollections(this IServiceCollection services)
     {
         services.AddSingleton<IEmailSender, EmailSender>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;
     }

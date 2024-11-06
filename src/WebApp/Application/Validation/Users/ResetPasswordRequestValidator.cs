@@ -1,7 +1,7 @@
-﻿using Application.DTO.User;
+﻿using Application.DTO.Users;
 using FluentValidation;
 
-namespace Application.Validation.User;
+namespace Application.Validation.Users;
 public class ResetPasswordRequestValidator : AbstractValidator<ResetPasswordRequest>
 {
     public ResetPasswordRequestValidator()

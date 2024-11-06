@@ -1,4 +1,4 @@
-﻿using Application.DTO.User;
+﻿using Application.DTO.Users;
 using Application.InfrastructureInterfaces;
 using Domain.Entities;
 using Domain.Enums;
@@ -14,7 +14,7 @@ using System.Security.Cryptography;
 using System.Text;
 
 namespace Application.Services.Auth;
-public class AuthenticationService : IAuthenticationService
+internal class AuthenticationService : IAuthenticationService
 {
     private readonly UserManager<User> _userManager;
     private readonly JwtOptions _jwtOptions;
