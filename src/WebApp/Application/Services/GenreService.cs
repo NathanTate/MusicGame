@@ -46,11 +46,11 @@ internal class GenreService : IGenreService
 
         var genre = _mapper.Map<Genre>(model);
 
-        var createdGenre = _uow.GenreRepository.Create(genre);
+        _uow.GenreRepository.Create(genre);
 
         await _uow.SaveChangesAsync(cancellationToken);
 
-        return Result.Ok(_mapper.Map<GenreResponse>(createdGenre));
+        return _mapper.Map<GenreResponse>(createdGenre);
     }
 
     public async Task<Result<GenreResponse>> UpdateGenreAsync(UpdateGenreRequest model, CancellationToken cancellationToken = default)
@@ -64,11 +64,11 @@ internal class GenreService : IGenreService
 
         _mapper.Map(model, genre);
 
-        var updatedGenre = _uow.GenreRepository.Update(_mapper.Map<Genre>(model));
+        _uow.GenreRepository.Update(genre);
 
         await _uow.SaveChangesAsync(cancellationToken);
 
-        return Result.Ok(_mapper.Map<GenreResponse>(updatedGenre));
+        return _mapper.Map<GenreResponse>(updatedGenre);
     }
 
     public async Task<Result> DeleteGenreAsync(int genreId, CancellationToken cancellationToken = default)

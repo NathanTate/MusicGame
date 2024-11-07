@@ -42,6 +42,12 @@ internal class UserTypeConfig : IEntityTypeConfiguration<User>
             .IsRequired(false);
 
         builder
+            .HasOne(b => b.Photo)
+            .WithOne(b => b.User)
+            .HasForeignKey<UserPhoto>(b => b.UserId)
+            .IsRequired();
+
+        builder
             .Ignore(b => b.Roles);
     }
 }

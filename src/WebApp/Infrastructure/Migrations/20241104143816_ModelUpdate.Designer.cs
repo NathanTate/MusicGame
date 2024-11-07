@@ -4,6 +4,7 @@ using Infrastructure.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241104143816_ModelUpdate")]
+    partial class ModelUpdate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -61,13 +64,13 @@ namespace Infrastructure.Migrations
                     b.ToTable("Genres");
                 });
 
-            modelBuilder.Entity("Domain.Entities.MediaPhoto", b =>
+            modelBuilder.Entity("Domain.Entities.Photo", b =>
                 {
-                    b.Property<int>("MediaPhotoId")
+                    b.Property<int>("PhotoId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MediaPhotoId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PhotoId"));
 
                     b.Property<string>("ContentType")
                         .IsRequired()
@@ -87,12 +90,12 @@ namespace Infrastructure.Migrations
                     b.Property<bool>("isDeleted")
                         .HasColumnType("bit");
 
-                    b.HasKey("MediaPhotoId");
+                    b.HasKey("PhotoId");
 
                     b.HasIndex("isDeleted")
                         .HasFilter("IsDeleted = 0");
 
-                    b.ToTable("MediaPhotos");
+                    b.ToTable("Photos");
                 });
 
             modelBuilder.Entity("Domain.Entities.Playlist", b =>
@@ -162,6 +165,11 @@ namespace Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SongId"));
 
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -172,19 +180,27 @@ namespace Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("LikesCount")
-                        .HasColumnType("int");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<string>("Path")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int?>("PhotoId")
                         .HasColumnType("int");
+
+                    b.Property<DateTime>("ReleaseDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long>("Size")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserId")
                         .IsRequired()
@@ -300,47 +316,6 @@ namespace Infrastructure.Migrations
                         .HasFilter("IsDeleted = 0");
 
                     b.ToTable("AspNetUsers", (string)null);
-                });
-
-            modelBuilder.Entity("Domain.Entities.UserPhoto", b =>
-                {
-                    b.Property<int>("UserPhotoId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserPhotoId"));
-
-                    b.Property<string>("ContentType")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
-                    b.Property<DateTime?>("DeletedOnUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<long>("Size")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("URL")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(128)");
-
-                    b.Property<bool>("isDeleted")
-                        .HasColumnType("bit");
-
-                    b.HasKey("UserPhotoId");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
-                    b.HasIndex("isDeleted")
-                        .HasFilter("IsDeleted = 0");
-
-                    b.ToTable("UserPhotos");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -538,7 +513,7 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.Playlist", b =>
                 {
-                    b.HasOne("Domain.Entities.MediaPhoto", "Photo")
+                    b.HasOne("Domain.Entities.Photo", "Photo")
                         .WithMany("Playlists")
                         .HasForeignKey("PhotoId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -556,7 +531,7 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.Song", b =>
                 {
-                    b.HasOne("Domain.Entities.MediaPhoto", "Photo")
+                    b.HasOne("Domain.Entities.Photo", "Photo")
                         .WithMany("Songs")
                         .HasForeignKey("PhotoId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -568,17 +543,6 @@ namespace Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Photo");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Domain.Entities.UserPhoto", b =>
-                {
-                    b.HasOne("Domain.Entities.User", "User")
-                        .WithOne("Photo")
-                        .HasForeignKey("Domain.Entities.UserPhoto", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
 
                     b.Navigation("User");
                 });
@@ -694,7 +658,7 @@ namespace Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Domain.Entities.MediaPhoto", b =>
+            modelBuilder.Entity("Domain.Entities.Photo", b =>
                 {
                     b.Navigation("Playlists");
 
@@ -703,8 +667,6 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.User", b =>
                 {
-                    b.Navigation("Photo");
-
                     b.Navigation("Playlists");
 
                     b.Navigation("Songs");

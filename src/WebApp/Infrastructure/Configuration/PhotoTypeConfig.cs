@@ -3,9 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Configuration;
-internal class PhotoTypeConfig : IEntityTypeConfiguration<Photo>
+internal class PhotoTypeConfig<T> : IEntityTypeConfiguration<T> where T: Photo
 {
-    public void Configure(EntityTypeBuilder<Photo> builder)
+    public virtual void Configure(EntityTypeBuilder<T> builder)
     {
         builder
             .HasQueryFilter(b => !b.isDeleted);
@@ -15,15 +15,38 @@ internal class PhotoTypeConfig : IEntityTypeConfiguration<Photo>
             .HasFilter("IsDeleted = 0");
 
         builder
-            .HasKey(b => b.PhotoId);
-
-        builder
             .Property(b => b.URL)
             .IsRequired();
 
         builder
-            .Property(b => b.PublicId)
-            .HasMaxLength(100)
+            .Property(b => b.Size)
             .IsRequired();
+
+        builder
+           .Property(b => b.ContentType)
+           .HasMaxLength(30)
+           .IsRequired();
+    }
+}
+
+internal class UserPhotoTypeConfig : PhotoTypeConfig<UserPhoto>
+{
+    public override void Configure(EntityTypeBuilder<UserPhoto> builder)
+    {
+        builder
+            .HasKey(b => b.UserPhotoId);
+
+        base.Configure(builder);
+    }
+}
+
+internal class MediaPhotoTypeConfig : PhotoTypeConfig<MediaPhoto>
+{
+    public override void Configure(EntityTypeBuilder<MediaPhoto> builder)
+    {
+        builder
+            .HasKey(b => b.MediaPhotoId);
+
+        base.Configure(builder);
     }
 }

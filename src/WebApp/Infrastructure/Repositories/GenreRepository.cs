@@ -12,10 +12,9 @@ internal class GenreRepository : IGenreRepository
         _dbContext = dbContext;
     }
 
-    public Genre Create(Genre model)
+    public void Create(Genre model)
     {
         _dbContext.Genres.Add(model);
-        return model;
     }
 
     public async Task<bool> DeleteAsync(int genreId, CancellationToken cancellationToken = default)
@@ -41,9 +40,8 @@ internal class GenreRepository : IGenreRepository
         return await _dbContext.Genres.FindAsync([genreId], cancellationToken: cancellationToken);
     }
 
-    public Genre Update(Genre model)
+    public void Update(Genre model)
     {
         _dbContext.Update(model);
-        return model;
     }
 }

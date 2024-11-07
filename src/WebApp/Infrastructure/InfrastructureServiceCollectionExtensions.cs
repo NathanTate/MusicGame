@@ -9,6 +9,7 @@ using Application.InfrastructureInterfaces;
 using Microsoft.AspNetCore.Identity;
 using Domain.Primitives;
 using Infrastructure.Repositories;
+using Azure.Storage.Blobs;
 
 namespace Infrastructure;
 public static class InfrastructureServiceCollectionExtensions
@@ -19,7 +20,7 @@ public static class InfrastructureServiceCollectionExtensions
 
         services.AddAppDbContext(configuration);
         services.AddIdentity();
-        services.AddServiceCollections();
+        services.AddServiceCollections(configuration);
 
         return services;
     }
@@ -54,9 +55,12 @@ public static class InfrastructureServiceCollectionExtensions
         return services;
     }
 
-    private static IServiceCollection AddServiceCollections(this IServiceCollection services)
+    private static IServiceCollection AddServiceCollections(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddSingleton(x => new BlobServiceClient(configuration.GetValue<string>("AzureStorage:ConnectionString")));
+
         services.AddSingleton<IEmailSender, EmailSender>();
+        services.AddSingleton<IFileHandler, FileHandler>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;

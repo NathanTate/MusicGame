@@ -13,7 +13,8 @@ public sealed class AppDbContext : IdentityDbContext<User>
     }
 
     public DbSet<Genre> Genres { get; set; }
-    public DbSet<Photo> Photos { get; set; }
+    public DbSet<UserPhoto> UserPhotos { get; set; }
+    public DbSet<MediaPhoto> MediaPhotos { get; set; }
     public DbSet<Playlist> Playlists { get; set; }
     public DbSet<Song> Songs { get; set; }
 
