@@ -10,6 +10,7 @@ internal class UnitOfWork : IUnitOfWork
     private IGenreRepository? _genreRepository;
     private ISongRepository? _songRepository;
     private IPhotoRepository? _photoRepository;
+    private IPlaylistRepository? _playlistRepository;
     public UnitOfWork(AppDbContext dbContext)
     {
         _dbContext = dbContext;
@@ -18,6 +19,7 @@ internal class UnitOfWork : IUnitOfWork
     public IGenreRepository GenreRepository { get => _genreRepository ??= new GenreRepository(_dbContext); }
     public ISongRepository SongRepository { get => _songRepository ??= new SongRepository(_dbContext); }
     public IPhotoRepository PhotoRepository { get => _photoRepository ??= new PhotoRepository(_dbContext); }
+    public IPlaylistRepository PlaylistRepository { get => _playlistRepository ??= new PlaylistRepository(_dbContext); }
 
     public async Task<bool> ExistsAsync<TEntity>(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default) where TEntity : class
     {

@@ -5,6 +5,7 @@ public class Playlist : ISoftDeletable
 {
     public int PlaylistId { get; set; }
     public string Name { get; set; } = null!;
+    public string? Description { get; set; }
     public bool IsPrivate { get; set; } = false;
     public int TotalDuration { get; set; }
     public int SongsCount { get; set; } = default;

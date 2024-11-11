@@ -18,9 +18,16 @@ internal class PlaylistTypeConfig : IEntityTypeConfiguration<Playlist>
             .HasKey(b => b.PlaylistId);
 
         builder
+            .HasIndex(b => b.Name);
+
+        builder
             .Property(b => b.Name)
             .HasMaxLength(100)
             .IsRequired(true);
+
+        builder
+            .Property(b => b.Description)
+            .HasMaxLength(300);
 
         builder
             .Property(b => b.IsPrivate)
