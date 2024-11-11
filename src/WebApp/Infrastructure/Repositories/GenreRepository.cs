@@ -12,10 +12,9 @@ internal class GenreRepository : IGenreRepository
         _dbContext = dbContext;
     }
 
-    public Genre Create(Genre model)
+    public void Create(Genre model)
     {
         _dbContext.Genres.Add(model);
-        return model;
     }
 
     public async Task<bool> DeleteAsync(int genreId, CancellationToken cancellationToken = default)
@@ -33,17 +32,25 @@ internal class GenreRepository : IGenreRepository
 
     public async Task<List<Genre>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await _dbContext.Genres.ToListAsync(cancellationToken);
+        return await _dbContext.Genres
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<Genre?> GetByIdAsync(int genreId, CancellationToken cancellationToken = default)
+    public async Task<Genre?> GetByIdAsync(int genreId, bool tracking, CancellationToken cancellationToken = default)
     {
-        return await _dbContext.Genres.FindAsync([genreId], cancellationToken: cancellationToken);
+        var genre = await _dbContext.Genres.FindAsync([genreId], cancellationToken: cancellationToken);
+
+        if (!tracking && genre is not null)
+        {
+            _dbContext.Entry(genre).State = EntityState.Detached;
+        }
+
+        return genre;
     }
 
-    public Genre Update(Genre model)
+    public void Update(Genre model)
     {
         _dbContext.Update(model);
-        return model;
     }
 }

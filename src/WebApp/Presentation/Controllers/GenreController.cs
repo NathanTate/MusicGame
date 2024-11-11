@@ -3,12 +3,14 @@ using Application.DTO.Genres;
 using Application.Interfaces;
 using FluentResults;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Presentation.Controllers;
 
 [Route("genres")]
+[Authorize]
 public class GenreController : BaseApiController
 {
     private readonly IGenreService _genreService;
@@ -29,10 +31,11 @@ public class GenreController : BaseApiController
         if (result.IsFailed)
             return BadRequest(result.Errors);
 
-        return Ok(result.Value);
+        return CreatedAtAction(nameof(GetGenre), new { genreId = result.Value.GenreId }, result.Value);
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetGenres()
     {
         List<GenreResponse> genres = await _genreService.GetGenresAsync(HttpContext.RequestAborted);
@@ -40,10 +43,11 @@ public class GenreController : BaseApiController
         return Ok(genres);
     }
 
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetGenre(int id)
+    [HttpGet("{genreId}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetGenre(int genreId)
     {
-        Result<GenreResponse> result = await _genreService.GetGenreAsync(id, HttpContext.RequestAborted);
+        Result<GenreResponse> result = await _genreService.GetGenreAsync(genreId, HttpContext.RequestAborted);
 
         if (result.IsFailed)
             return NotFound(result.Errors);
@@ -52,7 +56,7 @@ public class GenreController : BaseApiController
     }
 
     [HttpPut]
-    public async Task<IActionResult> UpdateGenre([FromBody] UpdateGenreRequest model, IValidator<UpdateGenreRequest> validator)
+    public async Task<IActionResult> UpdateGenre([FromBody] UpdateGenreRequest model, [FromServices] IValidator<UpdateGenreRequest> validator)
     {
         ModelStateDictionary errors = await Validator.ValidateAsync(validator, model, HttpContext.RequestAborted);
         if (errors.Count > 0)
@@ -66,14 +70,14 @@ public class GenreController : BaseApiController
         return Ok(result.Value);
     }
 
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteGenre(int id)
+    [HttpDelete("{genreId}")]
+    public async Task<IActionResult> DeleteGenre(int genreId)
     {
-        Result<GenreResponse> result = await _genreService.DeleteGenreAsync(id, HttpContext.RequestAborted);
+        Result result = await _genreService.DeleteGenreAsync(genreId, HttpContext.RequestAborted);
 
         if (result.IsFailed)
             return NotFound(result.Errors);
 
-        return Ok(result.Value);
+        return NoContent();
     }
 }

@@ -2,6 +2,7 @@ using Application;
 using Infrastructure;
 using Infrastructure.Seed;
 using Microsoft.AspNetCore.Identity;
+using Presentation.Extensions;
 using Presentation.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +13,7 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddPresentation();
 builder.Services.AddApplicationLayer(builder.Configuration);
 builder.Services.AddInfrastructureLayer(builder.Configuration);
 

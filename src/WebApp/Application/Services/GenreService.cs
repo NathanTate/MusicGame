@@ -25,14 +25,14 @@ internal class GenreService : IGenreService
 
     public async Task<Result<GenreResponse>> GetGenreAsync(int genreId, CancellationToken cancellationToken = default)
     {
-        var genre = await _uow.GenreRepository.GetByIdAsync(genreId, cancellationToken);
+        var genre = await _uow.GenreRepository.GetByIdAsync(genreId, false, cancellationToken);
 
         if (genre is null)
         {
             return Result.Fail($"Genre with Id - {genreId} was not found");
         }
 
-        return _mapper.Map<GenreResponse>(genre);
+        return Result.Ok(_mapper.Map<GenreResponse>(genre));
     }
 
     public async Task<Result<GenreResponse>> CreateGenreAsync(CreateGenreRequest model, CancellationToken cancellationToken = default)
@@ -46,16 +46,16 @@ internal class GenreService : IGenreService
 
         var genre = _mapper.Map<Genre>(model);
 
-        var createdGenre = _uow.GenreRepository.Create(genre);
+        _uow.GenreRepository.Create(genre);
 
         await _uow.SaveChangesAsync(cancellationToken);
 
-        return _mapper.Map<GenreResponse>(createdGenre);
+        return Result.Ok(_mapper.Map<GenreResponse>(genre));
     }
 
     public async Task<Result<GenreResponse>> UpdateGenreAsync(UpdateGenreRequest model, CancellationToken cancellationToken = default)
     {
-        var genre = await _uow.GenreRepository.GetByIdAsync(model.GenreId, cancellationToken);
+        var genre = await _uow.GenreRepository.GetByIdAsync(model.GenreId, true, cancellationToken);
 
         if (genre is null)
         {
@@ -64,11 +64,11 @@ internal class GenreService : IGenreService
 
         _mapper.Map(model, genre);
 
-        var updatedGenre = _uow.GenreRepository.Update(_mapper.Map<Genre>(model));
+        _uow.GenreRepository.Update(genre);
 
         await _uow.SaveChangesAsync(cancellationToken);
 
-        return _mapper.Map<GenreResponse>(updatedGenre);
+        return Result.Ok(_mapper.Map<GenreResponse>(genre));
     }
 
     public async Task<Result> DeleteGenreAsync(int genreId, CancellationToken cancellationToken = default)

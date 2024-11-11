@@ -12,10 +12,15 @@ internal class GenreTypeConfig : IEntityTypeConfiguration<Genre>
 
         builder
             .HasIndex(b => b.isDeleted)
-            .HasFilter("IsDeleted = 0");
+            .HasFilter("[IsDeleted] = 0");
 
         builder
             .HasKey(b => b.GenreId);
+
+        builder
+            .HasIndex(b => b.Name)
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
 
         builder
             .Property(b => b.Name)

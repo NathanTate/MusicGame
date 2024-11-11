@@ -17,6 +17,7 @@ public class User : IdentityUser, ISoftDeletable
     public bool isDeleted { get; set; }
     public DateTime? DeletedOnUtc { get; set; }
 
+    public Photo? Photo { get; set; }
     public List<Playlist> Playlists { get; } = [];
     public List<Song> Songs { get; } = [];
     public List<Song> LikedSongs { get; } = [];
