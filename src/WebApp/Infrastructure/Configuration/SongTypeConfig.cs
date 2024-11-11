@@ -12,14 +12,15 @@ internal class SongTypeConfig : IEntityTypeConfiguration<Song>
 
         builder
             .HasIndex(b => b.isDeleted)
-            .HasFilter("IsDeleted = 0");
+            .HasFilter("[IsDeleted] = 0");
 
         builder
             .HasKey(b => b.SongId);
 
         builder
             .HasIndex(b => b.Name)
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
 
         builder
             .Property(b => b.Name)
@@ -27,11 +28,24 @@ internal class SongTypeConfig : IEntityTypeConfiguration<Song>
             .IsRequired();
 
         builder
-            .Property(b => b.Path)
+            .Property(b => b.Url)
             .IsRequired();
+
+        builder
+            .Property(b => b.LikesCount)
+            .HasDefaultValue(0);
 
         builder.
             Property(b => b.Duration)
+            .IsRequired();
+
+        builder
+            .Property(b => b.Size)
+            .IsRequired();
+
+        builder
+            .Property(b => b.ContentType)
+            .HasMaxLength(30)
             .IsRequired();
 
         builder

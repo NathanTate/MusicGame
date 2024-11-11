@@ -52,6 +52,7 @@ public static class ApplicationServiceCollectionExtensions
     {
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<IGenreService, GenreService>();
+        services.AddScoped<ISongService, SongService>();
 
         return services;
     }

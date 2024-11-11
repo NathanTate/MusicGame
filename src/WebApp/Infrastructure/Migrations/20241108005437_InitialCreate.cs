@@ -31,10 +31,13 @@ namespace Infrastructure.Migrations
                 {
                     Id = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
-                    UserName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    DisplayName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     RefreshToken = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
                     RefreshTokenExpiryTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    isDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedOnUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     EmailConfirmed = table.Column<bool>(type: "bit", nullable: false),
@@ -60,25 +63,14 @@ namespace Infrastructure.Migrations
                     GenreId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    IsSystemDefined = table.Column<bool>(type: "bit", nullable: false, defaultValue: false)
+                    NormalizedName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false, computedColumnSql: "Upper([Name])", stored: true),
+                    IsSystemDefined = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    isDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedOnUtc = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Genres", x => x.GenreId);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Photos",
-                columns: table => new
-                {
-                    PhotoId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    URL = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    PublicId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Photos", x => x.PhotoId);
                 });
 
             migrationBuilder.CreateTable(
@@ -188,6 +180,30 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Photos",
+                columns: table => new
+                {
+                    PhotoId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    URL = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Size = table.Column<long>(type: "bigint", nullable: false),
+                    ContentType = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    isDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedOnUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UserId = table.Column<string>(type: "nvarchar(128)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Photos", x => x.PhotoId);
+                    table.ForeignKey(
+                        name: "FK_Photos_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Playlists",
                 columns: table => new
                 {
@@ -199,6 +215,8 @@ namespace Infrastructure.Migrations
                     SongsCount = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
                     LikesCount = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    isDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedOnUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UserId = table.Column<string>(type: "nvarchar(128)", nullable: false),
                     PhotoId = table.Column<int>(type: "int", nullable: true)
                 },
@@ -215,8 +233,7 @@ namespace Infrastructure.Migrations
                         name: "FK_Playlists_Photos_PhotoId",
                         column: x => x.PhotoId,
                         principalTable: "Photos",
-                        principalColumn: "PhotoId",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "PhotoId");
                 });
 
             migrationBuilder.CreateTable(
@@ -226,10 +243,15 @@ namespace Infrastructure.Migrations
                     SongId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Path = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    LikesCount = table.Column<int>(type: "int", nullable: false),
+                    Url = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    LikesCount = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
                     Duration = table.Column<int>(type: "int", nullable: false),
+                    Size = table.Column<long>(type: "bigint", nullable: false),
+                    ContentType = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    ReleaseDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    isDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedOnUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UserId = table.Column<string>(type: "nvarchar(128)", nullable: false),
                     PhotoId = table.Column<int>(type: "int", nullable: true)
                 },
@@ -246,8 +268,7 @@ namespace Infrastructure.Migrations
                         name: "FK_Songs_Photos_PhotoId",
                         column: x => x.PhotoId,
                         principalTable: "Photos",
-                        principalColumn: "PhotoId",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "PhotoId");
                 });
 
             migrationBuilder.CreateTable(
@@ -382,6 +403,12 @@ namespace Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_AspNetUsers_isDeleted",
+                table: "AspNetUsers",
+                column: "isDeleted",
+                filter: "[IsDeleted] = 0");
+
+            migrationBuilder.CreateIndex(
                 name: "UserNameIndex",
                 table: "AspNetUsers",
                 column: "NormalizedUserName",
@@ -389,9 +416,40 @@ namespace Infrastructure.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Genres_isDeleted",
+                table: "Genres",
+                column: "isDeleted",
+                filter: "[IsDeleted] = 0");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Genres_Name",
+                table: "Genres",
+                column: "Name",
+                unique: true,
+                filter: "[IsDeleted] = 0");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Photos_isDeleted",
+                table: "Photos",
+                column: "isDeleted",
+                filter: "[IsDeleted] = 0");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Photos_UserId",
+                table: "Photos",
+                column: "UserId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_PlaylistLike_UserId",
                 table: "PlaylistLike",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Playlists_isDeleted",
+                table: "Playlists",
+                column: "isDeleted",
+                filter: "[IsDeleted] = 0");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Playlists_PhotoId",
@@ -419,10 +477,17 @@ namespace Infrastructure.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Songs_isDeleted",
+                table: "Songs",
+                column: "isDeleted",
+                filter: "[IsDeleted] = 0");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Songs_Name",
                 table: "Songs",
                 column: "Name",
-                unique: true);
+                unique: true,
+                filter: "[IsDeleted] = 0");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Songs_PhotoId",
@@ -478,10 +543,10 @@ namespace Infrastructure.Migrations
                 name: "Songs");
 
             migrationBuilder.DropTable(
-                name: "AspNetUsers");
+                name: "Photos");
 
             migrationBuilder.DropTable(
-                name: "Photos");
+                name: "AspNetUsers");
         }
     }
 }

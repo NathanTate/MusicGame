@@ -12,7 +12,7 @@ internal class UserTypeConfig : IEntityTypeConfiguration<User>
 
         builder
             .HasIndex(b => b.isDeleted)
-            .HasFilter("IsDeleted = 0");
+            .HasFilter("[IsDeleted] = 0");
 
         builder
             .Property(b => b.Id)
@@ -40,6 +40,11 @@ internal class UserTypeConfig : IEntityTypeConfiguration<User>
         builder
             .Property(b => b.RefreshTokenExpiryTime)
             .IsRequired(false);
+
+        builder
+            .HasOne(b => b.Photo)
+            .WithOne(b => b.User)
+            .HasForeignKey<Photo>(b => b.UserId);
 
         builder
             .Ignore(b => b.Roles);
