@@ -71,6 +71,13 @@ internal class SongService : ISongService
 
     public async Task<Result<SongResponse>> UpdateSongAsync(UpdateSongRequest model, CancellationToken cancellationToken = default)
     {
+        var nameExists = await _uow.ExistsAsync<Song>(x => x.Name.ToUpper() == model.Name.ToUpper(), cancellationToken);
+
+        if (nameExists)
+        {
+            return Result.Fail($"Song with name {model.Name} already exists");
+        }
+
         var song = await _uow.SongRepository.GetByIdAsync(model.SongId, true, cancellationToken);
 
         if (song is null)
