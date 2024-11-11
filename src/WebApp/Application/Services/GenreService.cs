@@ -25,7 +25,7 @@ internal class GenreService : IGenreService
 
     public async Task<Result<GenreResponse>> GetGenreAsync(int genreId, CancellationToken cancellationToken = default)
     {
-        var genre = await _uow.GenreRepository.GetByIdAsync(genreId, cancellationToken);
+        var genre = await _uow.GenreRepository.GetByIdAsync(genreId, false, cancellationToken);
 
         if (genre is null)
         {
@@ -50,12 +50,12 @@ internal class GenreService : IGenreService
 
         await _uow.SaveChangesAsync(cancellationToken);
 
-        return _mapper.Map<GenreResponse>(createdGenre);
+        return Result.Ok(_mapper.Map<GenreResponse>(genre));
     }
 
     public async Task<Result<GenreResponse>> UpdateGenreAsync(UpdateGenreRequest model, CancellationToken cancellationToken = default)
     {
-        var genre = await _uow.GenreRepository.GetByIdAsync(model.GenreId, cancellationToken);
+        var genre = await _uow.GenreRepository.GetByIdAsync(model.GenreId, true, cancellationToken);
 
         if (genre is null)
         {
@@ -68,7 +68,7 @@ internal class GenreService : IGenreService
 
         await _uow.SaveChangesAsync(cancellationToken);
 
-        return _mapper.Map<GenreResponse>(updatedGenre);
+        return Result.Ok(_mapper.Map<GenreResponse>(genre));
     }
 
     public async Task<Result> DeleteGenreAsync(int genreId, CancellationToken cancellationToken = default)

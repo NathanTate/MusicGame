@@ -20,5 +20,5 @@ public class Playlist : ISoftDeletable
     public User User { get; set; } = null!;
 
     public int? PhotoId { get; set; }
-    public MediaPhoto? Photo { get; set; }
+    public Photo? Photo { get; set; }
 }

@@ -32,12 +32,21 @@ internal class GenreRepository : IGenreRepository
 
     public async Task<List<Genre>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await _dbContext.Genres.ToListAsync(cancellationToken);
+        return await _dbContext.Genres
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<Genre?> GetByIdAsync(int genreId, CancellationToken cancellationToken = default)
+    public async Task<Genre?> GetByIdAsync(int genreId, bool tracking, CancellationToken cancellationToken = default)
     {
-        return await _dbContext.Genres.FindAsync([genreId], cancellationToken: cancellationToken);
+        var genre = await _dbContext.Genres.FindAsync([genreId], cancellationToken: cancellationToken);
+
+        if (!tracking && genre is not null)
+        {
+            _dbContext.Entry(genre).State = EntityState.Detached;
+        }
+
+        return genre;
     }
 
     public void Update(Genre model)

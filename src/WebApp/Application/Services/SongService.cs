@@ -5,6 +5,7 @@ using AutoMapper;
 using Domain.Entities;
 using Domain.Enums;
 using FluentResults;
+using Microsoft.AspNetCore.Http;
 
 namespace Application.Services;
 
@@ -29,25 +30,62 @@ internal class SongService : ISongService
             return Result.Fail($"Song with name {model.Name} arleady exists");
         }
 
-        var song = _mapper.Map<Song>(model);
+        var allExist = model.GenreIds.TrueForAll(id => _uow.Exists<Genre>(e => e.GenreId == id));
 
-        var songUrl = "https://musicgame.blob.core.windows.net/songs/0036_BreakStride.mp3";
-            //await _fileHandler.UploadFileAsync(model.SongFile, FileContainer.Songs, cancellationToken);
-        song.Url = songUrl;
-        song.Size = model.SongFile.Length;
-        song.ContentType = model.SongFile.ContentType;
-        song.UserId = userId;
-
-        if (model.PhotoFile is not null)
+        if (!allExist)
         {
-            var photoUrl = await _fileHandler.UploadFileAsync(model.PhotoFile, FileContainer.Photos, cancellationToken);
-            //Todo: upload photo
+            return Result.Fail($"Please provide valid genres, one of provided does not exist");
         }
 
-        var createdSong = _uow.SongRepository.Create(song);
+        var song = _mapper.Map<Song>(model);
+        _uow.SongRepository.AttachGenresToSong(song, model.GenreIds);
+
+        var songUrl = await _fileHandler.UploadFileAsync(model.SongFile, FileContainer.Songs, cancellationToken);
+        song.Url = songUrl;
+        song.UserId = userId;
+
+        _uow.SongRepository.Create(song);
         await _uow.SaveChangesAsync(cancellationToken);
 
-        return Result.Ok(_mapper.Map<SongResponse>(createdSong));
+        return Result.Ok(_mapper.Map<SongResponse>(song));
+    }
+
+    public async Task<Result<SongResponse>> GetSongAsync(int songId, CancellationToken cancellationToken = default)
+    {
+        var song = await _uow.SongRepository.GetByIdAsync(songId, false, cancellationToken);
+
+        if (song is null)
+        {
+            return Result.Fail($"Song with Id - {songId} doesn't exist");
+        }
+
+        return Result.Ok(_mapper.Map<SongResponse>(song));
+    }
+
+    public async Task<List<SongResponse>> GetSongsAsync(CancellationToken cancellationToken = default)
+    {
+        var songs = await _uow.SongRepository.GetAllAsync(cancellationToken);
+
+        return _mapper.Map<List<SongResponse>>(songs);  
+    }
+
+    public async Task<Result<SongResponse>> UpdateSongAsync(UpdateSongRequest model, CancellationToken cancellationToken = default)
+    {
+        var song = await _uow.SongRepository.GetByIdAsync(model.SongId, true, cancellationToken);
+
+        if (song is null)
+        {
+            return Result.Fail($"Song with Id - {model.SongId} doesn't exist");
+        }
+
+        _mapper.Map(model, song);
+
+        _uow.SongRepository.AttachGenresToSong(song, model.GenreIds);
+        _uow.SongRepository.Update(song);
+
+        await _uow.SaveChangesAsync();
+
+        return Result.Ok(_mapper.Map<SongResponse>(song));
     }
 
     public async Task<Result> DeleteSongAsync(int songId, CancellationToken cancellationToken = default)
@@ -67,27 +105,52 @@ internal class SongService : ISongService
         return Result.Ok();
     }
 
-    public async Task<Result<SongResponse>> GetSongAsync(int songId, CancellationToken cancellationToken = default)
+    public async Task<Result<SongResponse>> UploadPhotoAsync(int songId, IFormFile photo, CancellationToken cancellationToken = default)
     {
-        var song = await _uow.SongRepository.GetByIdAsync(songId, cancellationToken);
+        var song = await _uow.SongRepository.GetByIdAsync(songId, true, cancellationToken);
 
         if (song is null)
         {
             return Result.Fail($"Song with Id - {songId} doesn't exist");
         }
 
+        var photoUrl = song.Photo is null 
+            ? await _fileHandler.UploadFileAsync(photo, FileContainer.Photos, cancellationToken)
+            : await _fileHandler.UpdateFileAsync(Path.GetFileName(song.Url), photo, FileContainer.Photos, cancellationToken);
+
+        Photo songPhoto = new Photo()
+        {
+            URL = photoUrl,
+            Size = photo.Length,
+            ContentType = photo.ContentType,
+        };
+
+        song.Photo = songPhoto;
+        await _uow.SaveChangesAsync(cancellationToken);
+
         return Result.Ok(_mapper.Map<SongResponse>(song));
     }
 
-    public async Task<List<SongResponse>> GetSongsAsync(CancellationToken cancellationToken = default)
+    public async Task<Result> DeletePhotoAsync(int songId, CancellationToken cancellationToken = default)
     {
-        var songs = await _uow.SongRepository.GetAllAsync(cancellationToken);
+        var song = await _uow.SongRepository.GetByIdAsync(songId, true, cancellationToken);
 
-        return _mapper.Map<List<SongResponse>>(songs);  
-    }
+        if (song is null)
+        {
+            return Result.Fail($"Song with Id - {songId} doesn't exist");
+        }
 
-    public Task<Result<SongResponse>> UpdateSongAsync(UpdateSongRequest model, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
+        if (song.Photo is null)
+        {
+            return Result.Fail($"There is not photo to be deleted");
+        }
+
+        var fileName = Path.GetFileName(song.Photo.URL);
+        await _fileHandler.DeleteFileAsync(fileName, FileContainer.Photos, cancellationToken);
+
+        await _uow.PhotoRepository.DeleteAsync(song.Photo.PhotoId);
+        await _uow.SaveChangesAsync(cancellationToken);
+
+        return Result.Ok();
     }
 }

@@ -6,6 +6,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Presentation.Extensions;
 using System.Security.Claims;
 
 namespace Presentation.Controllers;
@@ -21,33 +22,34 @@ public class SongController : BaseApiController
     }
 
     [HttpPost]
-    public async Task<IActionResult> UploadPhoto(CreateSongRequest model, [FromServices] IValidator<CreateSongRequest> validator)
+    public async Task<IActionResult> CreateSong(CreateSongRequest model, [FromServices] IValidator<CreateSongRequest> validator)
     {
         ModelStateDictionary errors = await Validator.ValidateAsync(validator, model, HttpContext.RequestAborted);
         if (errors.Count > 0)
             return ValidationProblem(errors);
 
-        string userId = User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
-        Result<SongResponse> result = await _songService.CreateSongAsync(model, userId, HttpContext.RequestAborted);
+        Result<SongResponse> result = await _songService.CreateSongAsync(model, User.GetUserId(), HttpContext.RequestAborted);
 
         if (result.IsFailed)
             return BadRequest(result.Errors);
 
-        return Ok(result.Value);
+        return CreatedAtAction(nameof(GetSong), new { songId = result.Value.SongId}, result.Value);
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetGenres()
+    [AllowAnonymous]
+    public async Task<IActionResult> GetSongs()
     {
-        List<SongResponse> genres = await _songService.GetSongsAsync(HttpContext.RequestAborted);
+        List<SongResponse> songs = await _songService.GetSongsAsync(HttpContext.RequestAborted);
 
-        return Ok(genres);
+        return Ok(songs);
     }
 
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetGenre(int id)
+    [HttpGet("{songId}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetSong(int songId)
     {
-        Result<SongResponse> result = await _songService.GetSongAsync(id, HttpContext.RequestAborted);
+        Result<SongResponse> result = await _songService.GetSongAsync(songId, HttpContext.RequestAborted);
 
         if (result.IsFailed)
             return NotFound(result.Errors);
@@ -56,24 +58,55 @@ public class SongController : BaseApiController
     }
 
     [HttpPut]
-    public async Task<IActionResult> UpdateGenre([FromBody] UpdateSongRequest model, [FromServices] IValidator<UpdateSongRequest> validator)
+    public async Task<IActionResult> UpdateSong([FromBody] UpdateSongRequest model, [FromServices] IValidator<UpdateSongRequest> validator)
     {
         ModelStateDictionary errors = await Validator.ValidateAsync(validator, model, HttpContext.RequestAborted);
         if (errors.Count > 0)
             return ValidationProblem(errors);
 
-
-        return Ok();
-    }
-
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteGenre(int id)
-    {
-        Result result = await _songService.DeleteSongAsync(id, HttpContext.RequestAborted);
+        Result<SongResponse> result = await _songService.UpdateSongAsync(model, HttpContext.RequestAborted);
 
         if (result.IsFailed)
             return NotFound(result.Errors);
 
-        return Ok();
+        return Ok(result.Value);
+    }
+
+    [HttpDelete("{songId}")]
+    public async Task<IActionResult> DeleteSong(int songId)
+    {
+        Result result = await _songService.DeleteSongAsync(songId, HttpContext.RequestAborted);
+
+        if (result.IsFailed)
+            return NotFound(result.Errors);
+
+        return NoContent();
+    }
+
+    [HttpPatch("{songId}/photo")]
+    public async Task<IActionResult> UploadSongPhoto(int songId, IFormFile photo)
+    {
+        string? erroMessage = PhotoFileValidator.Validate(photo);
+
+        if (erroMessage is not null)
+            return BadRequest(erroMessage);
+
+        Result<SongResponse> result = await _songService.UploadPhotoAsync(songId, photo);
+
+        if (result.IsFailed)
+            return NotFound(result.Errors);
+
+        return Ok(result.Value);
+    }
+
+    [HttpDelete("{songId}/photo")]
+    public async Task<IActionResult> DeleteSongPhoto(int songId)
+    {
+        Result<SongResponse> result = await _songService.DeletePhotoAsync(songId);
+
+        if (result.IsFailed)
+            return NotFound(result.Errors);
+
+        return NoContent();
     }
 }

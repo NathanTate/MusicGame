@@ -1,5 +1,4 @@
 ﻿using Application.DTO.Genres;
-using Application.DTO.Photos;
 
 namespace Application.DTO.Songs;
 public class SongResponse
@@ -13,5 +12,5 @@ public class SongResponse
     public DateTime ReleaseDate { get; set; }
     public DateTime CreatedAt { get; set; }
     public List<GenreResponse> Genres { get; } = [];
-    public PhotoResponse? PhotoResponse { get; set; }
+    public PhotoResponse? Photo { get; set; }
 }

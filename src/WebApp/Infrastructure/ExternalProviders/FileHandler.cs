@@ -59,11 +59,11 @@ internal class FileHandler : IFileHandler
         return null;
     }
 
-    //public async Task<string> UpdateFileAsync(string fileName, IFormFile file, CancellationToken cancellationToken = default)
-    //{
-    //    await DeleteFileAsync(fileName, FileContainer.Photos, cancellationToken);
-    //    return await UploadFileAsync(file, FileContainer.Photos, cancellationToken);
-    //}
+    public async Task<string> UpdateFileAsync(string fileName, IFormFile file, FileContainer container, CancellationToken cancellationToken = default)
+    {
+        await DeleteFileAsync(fileName, container, cancellationToken);
+        return await UploadFileAsync(file, container, cancellationToken);
+    }
 
     public async Task DeleteFileAsync(string fileName, FileContainer container, CancellationToken cancellationToken = default)
     {

@@ -12,14 +12,15 @@ internal class SongTypeConfig : IEntityTypeConfiguration<Song>
 
         builder
             .HasIndex(b => b.isDeleted)
-            .HasFilter("IsDeleted = 0");
+            .HasFilter("[IsDeleted] = 0");
 
         builder
             .HasKey(b => b.SongId);
 
         builder
             .HasIndex(b => b.Name)
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
 
         builder
             .Property(b => b.Name)

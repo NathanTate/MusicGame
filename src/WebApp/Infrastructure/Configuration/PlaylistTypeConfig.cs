@@ -12,7 +12,7 @@ internal class PlaylistTypeConfig : IEntityTypeConfiguration<Playlist>
 
         builder
             .HasIndex(b => b.isDeleted)
-            .HasFilter("IsDeleted = 0");
+            .HasFilter("[IsDeleted] = 0");
 
         builder
             .HasKey(b => b.PlaylistId);
