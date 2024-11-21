@@ -1,16 +1,18 @@
 ﻿using Application.Common.Helpers;
 using Application.DTO.Genres;
 using Application.Interfaces;
+using Domain.Enums;
 using FluentResults;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Presentation.Extensions;
 
 namespace Presentation.Controllers;
 
 [Route("genres")]
-[Authorize]
+[Authorize(Roles = nameof(Role.ADMIN))]
 public class GenreController : BaseApiController
 {
     private readonly IGenreService _genreService;
@@ -28,10 +30,7 @@ public class GenreController : BaseApiController
 
         Result<GenreResponse> result = await _genreService.CreateGenreAsync(model, HttpContext.RequestAborted);
 
-        if (result.IsFailed)
-            return BadRequest(result.Errors);
-
-        return CreatedAtAction(nameof(GetGenre), new { genreId = result.Value.GenreId }, result.Value);
+        return result.ToCreateHttpResponse(HttpContext);
     }
 
     [HttpGet]
@@ -49,10 +48,7 @@ public class GenreController : BaseApiController
     {
         Result<GenreResponse> result = await _genreService.GetGenreAsync(genreId, HttpContext.RequestAborted);
 
-        if (result.IsFailed)
-            return NotFound(result.Errors);
-
-        return Ok(result.Value);
+        return result.ToHttpResponse(HttpContext);
     }
 
     [HttpPut]
@@ -64,10 +60,7 @@ public class GenreController : BaseApiController
 
         Result<GenreResponse> result = await _genreService.UpdateGenreAsync(model, HttpContext.RequestAborted);
 
-        if (result.IsFailed)
-            return NotFound(result.Errors);
-
-        return Ok(result.Value);
+        return result.ToHttpResponse(HttpContext);
     }
 
     [HttpDelete("{genreId}")]
@@ -75,9 +68,6 @@ public class GenreController : BaseApiController
     {
         Result result = await _genreService.DeleteGenreAsync(genreId, HttpContext.RequestAborted);
 
-        if (result.IsFailed)
-            return NotFound(result.Errors);
-
-        return NoContent();
+        return result.ToHttpResponse(HttpContext);
     }
 }

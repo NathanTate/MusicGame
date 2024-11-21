@@ -1,4 +1,5 @@
 ﻿using Application.DTO.Genres;
+using Application.Errors;
 using Application.InfrastructureInterfaces;
 using Application.Interfaces;
 using AutoMapper;
@@ -29,7 +30,7 @@ internal class GenreService : IGenreService
 
         if (genre is null)
         {
-            return Result.Fail($"Genre with Id - {genreId} was not found");
+            return new NotFoundError($"Genre with id {genreId} cannot be found");
         }
 
         return Result.Ok(_mapper.Map<GenreResponse>(genre));
@@ -41,7 +42,7 @@ internal class GenreService : IGenreService
 
         if (exists)
         {
-            return Result.Fail($"Genere with name - {model.Name} already exists");
+            return new ValidationError($"Genre with name {model.Name} already exists");
         }
 
         var genre = _mapper.Map<Genre>(model);
@@ -59,7 +60,7 @@ internal class GenreService : IGenreService
 
         if (genre is null)
         {
-            return Result.Fail($"Genre with Id - {model.GenreId} doesn't exist");
+            return new NotFoundError($"Genre with id {model.GenreId} cannot be found");
         }
 
         _mapper.Map(model, genre);
@@ -77,7 +78,7 @@ internal class GenreService : IGenreService
 
         if (!success)
         {
-            return Result.Fail($"Genre with Id - {genreId} doesn't exist");
+            return new NotFoundError($"Genre with id {genreId} cannot be found");
         }
 
         await _uow.SaveChangesAsync(cancellationToken);

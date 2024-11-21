@@ -16,6 +16,7 @@ public sealed class AppDbContext : IdentityDbContext<User>
     public DbSet<Playlist> Playlists { get; set; }
     public DbSet<Song> Songs { get; set; }
     public DbSet<Photo> Photos { get; set; }
+    public DbSet<PlaylistSong> PlaylistSongs { get; set; }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

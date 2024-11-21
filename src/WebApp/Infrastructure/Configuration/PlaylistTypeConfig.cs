@@ -63,22 +63,6 @@ internal class PlaylistTypeConfig : IEntityTypeConfiguration<Playlist>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder
-           .HasMany(b => b.Songs)
-           .WithMany(b => b.Playlists)
-           .UsingEntity<Dictionary<string, object>>(
-               "PlaylistSong",
-               j => j
-                   .HasOne<Song>()
-                   .WithMany()
-                   .HasForeignKey("SongId")
-                   .OnDelete(DeleteBehavior.NoAction),
-               j => j
-                   .HasOne<Playlist>()
-                   .WithMany()
-                   .HasForeignKey("PlaylistId")
-           );
-
-        builder
             .HasMany(b => b.UserLikes)
             .WithMany(b => b.LikedPlaylists)
             .UsingEntity<Dictionary<string, object>>(

@@ -31,8 +31,14 @@ internal class UnitOfWork : IUnitOfWork
         return _dbContext.Set<TEntity>().Any(predicate);
     }
 
+    public async Task<int> CountAsync<TEntity>(CancellationToken cancellationToken = default) where TEntity: class
+    {
+        return await _dbContext.Set<TEntity>().CountAsync(cancellationToken);
+    }
+
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         return await _dbContext.SaveChangesAsync(cancellationToken);
     }
+
 }

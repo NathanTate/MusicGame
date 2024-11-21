@@ -15,7 +15,7 @@ public class Playlist : ISoftDeletable
     public DateTime? DeletedOnUtc { get; set; }
 
     public List<User> UserLikes { get; } = [];
-    public List<Song> Songs { get; } = [];
+    public List<PlaylistSong> Songs { get; } = [];
 
     public string UserId { get; set; } = null!;
     public User User { get; set; } = null!;

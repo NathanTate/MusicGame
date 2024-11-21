@@ -33,17 +33,17 @@ internal class SongRepository : ISongRepository
         _dbContext.Songs.Add(model);
     }
 
-    public async Task<string?> DeleteAsync(int songId, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(int songId, CancellationToken cancellationToken = default)
     {
         var song = await _dbContext.Songs.FindAsync([songId], cancellationToken: cancellationToken);
 
         if (song is null)
         {
-            return null;
+            return false;
         }
 
         _dbContext.Entry(song).State = EntityState.Deleted;
-        return song.Url;
+        return true;
     }
 
     public async Task<List<Song>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -54,9 +54,10 @@ internal class SongRepository : ISongRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Song?> GetByIdAsync(int songId, bool tracking, CancellationToken cancellationToken = default)
+    public async Task<Song?> GetByIdAsync(int songId, bool tracking = true, string? userId = null, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.Songs
+            .Where(x => x.SongId == songId && (!x.IsPrivate || x.UserId == userId))
             .Include(x => x.Photo)
             .Include(x => x.Genres)
             .AsSplitQuery();
@@ -66,7 +67,7 @@ internal class SongRepository : ISongRepository
             query.AsNoTracking();
         }
 
-        return await query.FirstOrDefaultAsync(x => x.SongId == songId, cancellationToken);       
+        return await query.FirstOrDefaultAsync(cancellationToken);       
     }
 
     public void Update(Song model)

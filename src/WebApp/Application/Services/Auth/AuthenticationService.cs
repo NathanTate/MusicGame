@@ -43,7 +43,7 @@ internal class AuthenticationService : IAuthenticationService
             return Result.Fail(result.Errors.Select(err => err.Description));
         }
 
-        var roleResult = await _userManager.AddToRoleAsync(user, nameof(Roles.USER));
+        var roleResult = await _userManager.AddToRoleAsync(user, nameof(Role.USER));
         if (!roleResult.Succeeded)
         {
             return Result.Fail(roleResult.Errors.Select(err => err.Description));
@@ -301,4 +301,13 @@ internal class AuthenticationService : IAuthenticationService
             cancellationToken: cancellationToken);
     }
 
+    public async Task<User?> FindUserAsync(string email)
+    {
+        return await _userManager.FindByEmailAsync(email);
+    }
+
+    public async Task<User?> FindUserByIdAsync(string userId)
+    {
+        return await _userManager.FindByIdAsync(userId);
+    }
 }
