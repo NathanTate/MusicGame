@@ -8,5 +8,6 @@ internal class PhotoMappingProfile : Profile
     public PhotoMappingProfile()
     {
         CreateMap<Photo, PhotoResponse>();
+        CreateMap<Photo?, PhotoResponse?>();
     }
 }

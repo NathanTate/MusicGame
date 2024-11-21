@@ -10,7 +10,7 @@ public static class SeedRoles
         if (roleManager.Roles.Any()) 
             return;
 
-        var enumRoles = (IEnumerable<Roles>)Enum.GetValues(typeof(Roles));
+        var enumRoles = (IEnumerable<Role>)Enum.GetValues(typeof(Role));
         var roles = enumRoles.Select(role => new IdentityRole(role.ToString()));
 
         foreach (var role in roles)

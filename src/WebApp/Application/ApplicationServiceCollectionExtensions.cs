@@ -8,6 +8,8 @@ using Domain.Primitives;
 using Application.Services.Auth;
 using Application.Interfaces;
 using Application.Services;
+using Application.Common.UserHelpers;
+using Application.Authorization;
 
 namespace Application;
 public static class ApplicationServiceCollectionExtensions
@@ -19,6 +21,7 @@ public static class ApplicationServiceCollectionExtensions
         services.Configure<JwtOptions>(configuration.GetSection("JwtOptions"));
         configuration.Bind("JwtOptions", jwtOptions);
 
+        services.AddHttpContextAccessor();
         services.AddAutoMapper(assembly);
         services.AddValidatorsFromAssembly(assembly);
         services.AddAuthentication(jwtOptions);
@@ -50,9 +53,14 @@ public static class ApplicationServiceCollectionExtensions
 
     private static IServiceCollection AddServiceCollections(this IServiceCollection services)
     {
+        services.AddScoped<IUserContext, UserContext>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<IGenreService, GenreService>();
         services.AddScoped<ISongService, SongService>();
+        services.AddScoped<IPlaylistService, PlaylistService>();
+        
+        services.AddScoped<ISongAuthorizationService, SongAuthorizationService>();
+        services.AddScoped<IPlaylistAuthorizationService, PlaylistAuthorizationService>();
 
         return services;
     }

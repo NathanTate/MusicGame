@@ -49,6 +49,11 @@ internal class SongTypeConfig : IEntityTypeConfiguration<Song>
             .IsRequired();
 
         builder
+           .Property(b => b.IsPrivate)
+           .HasDefaultValue(false)
+           .IsRequired(true);
+
+        builder
             .Property(b => b.PhotoId)
             .IsRequired(false);
 

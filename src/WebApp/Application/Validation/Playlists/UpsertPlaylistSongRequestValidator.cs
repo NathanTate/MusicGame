@@ -1,0 +1,13 @@
+﻿using Application.DTO.Playlists;
+using FluentValidation;
+
+namespace Application.Validation.Playlists;
+public class UpsertPlaylistSongRequestValidator : AbstractValidator<UpsertSongPlaylistRequest>
+{
+    public UpsertPlaylistSongRequestValidator()
+    {
+        RuleFor(x => x.PlaylistId).NotEmpty();
+        RuleFor(x => x.SongId).NotEmpty();
+        RuleFor(x => x.Position).NotEmpty().GreaterThan(0);
+    }
+}

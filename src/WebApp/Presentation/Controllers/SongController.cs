@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Presentation.Extensions;
-using System.Security.Claims;
 
 namespace Presentation.Controllers;
 
@@ -28,12 +27,9 @@ public class SongController : BaseApiController
         if (errors.Count > 0)
             return ValidationProblem(errors);
 
-        Result<SongResponse> result = await _songService.CreateSongAsync(model, User.GetUserId(), HttpContext.RequestAborted);
+        Result<SongResponse> result = await _songService.CreateSongAsync(model, User.GetUserId()!, HttpContext.RequestAborted);
 
-        if (result.IsFailed)
-            return BadRequest(result.Errors);
-
-        return CreatedAtAction(nameof(GetSong), new { songId = result.Value.SongId}, result.Value);
+        return result.ToCreateHttpResponse(HttpContext);
     }
 
     [HttpGet]
@@ -49,12 +45,9 @@ public class SongController : BaseApiController
     [AllowAnonymous]
     public async Task<IActionResult> GetSong(int songId)
     {
-        Result<SongResponse> result = await _songService.GetSongAsync(songId, HttpContext.RequestAborted);
+        Result<SongResponse> result = await _songService.GetSongAsync(songId, User.GetUserId(), HttpContext.RequestAborted);
 
-        if (result.IsFailed)
-            return NotFound(result.Errors);
-
-        return Ok(result.Value);
+        return result.ToHttpResponse(HttpContext);
     }
 
     [HttpPut]
@@ -66,10 +59,7 @@ public class SongController : BaseApiController
 
         Result<SongResponse> result = await _songService.UpdateSongAsync(model, HttpContext.RequestAborted);
 
-        if (result.IsFailed)
-            return NotFound(result.Errors);
-
-        return Ok(result.Value);
+        return result.ToHttpResponse(HttpContext);
     }
 
     [HttpDelete("{songId}")]
@@ -77,10 +67,7 @@ public class SongController : BaseApiController
     {
         Result result = await _songService.DeleteSongAsync(songId, HttpContext.RequestAborted);
 
-        if (result.IsFailed)
-            return NotFound(result.Errors);
-
-        return NoContent();
+        return result.ToHttpResponse(HttpContext);
     }
 
     [HttpPatch("{songId}/photo")]
@@ -93,20 +80,14 @@ public class SongController : BaseApiController
 
         Result<SongResponse> result = await _songService.UploadPhotoAsync(songId, photo);
 
-        if (result.IsFailed)
-            return NotFound(result.Errors);
-
-        return Ok(result.Value);
+        return result.ToHttpResponse(HttpContext);
     }
 
     [HttpDelete("{songId}/photo")]
     public async Task<IActionResult> DeleteSongPhoto(int songId)
     {
-        Result<SongResponse> result = await _songService.DeletePhotoAsync(songId);
+        Result result = await _songService.DeletePhotoAsync(songId);
 
-        if (result.IsFailed)
-            return NotFound(result.Errors);
-
-        return NoContent();
+        return result.ToHttpResponse(HttpContext);
     }
 }

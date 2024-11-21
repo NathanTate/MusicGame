@@ -120,6 +120,10 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime?>("DeletedOnUtc")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
                     b.Property<bool>("IsPrivate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -155,6 +159,8 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("PlaylistId");
 
+                    b.HasIndex("Name");
+
                     b.HasIndex("PhotoId");
 
                     b.HasIndex("UserId");
@@ -163,6 +169,26 @@ namespace Infrastructure.Migrations
                         .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("Playlists");
+                });
+
+            modelBuilder.Entity("Domain.Entities.PlaylistSong", b =>
+                {
+                    b.Property<int>("PlaylistId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SongId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Position")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
+                    b.HasKey("PlaylistId", "SongId");
+
+                    b.HasIndex("SongId");
+
+                    b.ToTable("PlaylistSongs");
                 });
 
             modelBuilder.Entity("Domain.Entities.Song", b =>
@@ -186,6 +212,11 @@ namespace Infrastructure.Migrations
 
                     b.Property<int>("Duration")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsPrivate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<int>("LikesCount")
                         .ValueGeneratedOnAdd()
@@ -475,21 +506,6 @@ namespace Infrastructure.Migrations
                     b.ToTable("PlaylistLike");
                 });
 
-            modelBuilder.Entity("PlaylistSong", b =>
-                {
-                    b.Property<int>("PlaylistId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("SongId")
-                        .HasColumnType("int");
-
-                    b.HasKey("PlaylistId", "SongId");
-
-                    b.HasIndex("SongId");
-
-                    b.ToTable("PlaylistSong");
-                });
-
             modelBuilder.Entity("SongGenre", b =>
                 {
                     b.Property<int>("GenreId")
@@ -545,6 +561,25 @@ namespace Infrastructure.Migrations
                     b.Navigation("Photo");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Domain.Entities.PlaylistSong", b =>
+                {
+                    b.HasOne("Domain.Entities.Playlist", "Playlist")
+                        .WithMany("Songs")
+                        .HasForeignKey("PlaylistId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.Song", "Song")
+                        .WithMany("Playlists")
+                        .HasForeignKey("SongId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Playlist");
+
+                    b.Navigation("Song");
                 });
 
             modelBuilder.Entity("Domain.Entities.Song", b =>
@@ -631,21 +666,6 @@ namespace Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("PlaylistSong", b =>
-                {
-                    b.HasOne("Domain.Entities.Playlist", null)
-                        .WithMany()
-                        .HasForeignKey("PlaylistId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Entities.Song", null)
-                        .WithMany()
-                        .HasForeignKey("SongId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("SongGenre", b =>
                 {
                     b.HasOne("Domain.Entities.Genre", null)
@@ -681,6 +701,16 @@ namespace Infrastructure.Migrations
                     b.Navigation("Playlists");
 
                     b.Navigation("Songs");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Playlist", b =>
+                {
+                    b.Navigation("Songs");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Song", b =>
+                {
+                    b.Navigation("Playlists");
                 });
 
             modelBuilder.Entity("Domain.Entities.User", b =>

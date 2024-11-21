@@ -18,9 +18,16 @@ internal class PlaylistTypeConfig : IEntityTypeConfiguration<Playlist>
             .HasKey(b => b.PlaylistId);
 
         builder
+            .HasIndex(b => b.Name);
+
+        builder
             .Property(b => b.Name)
             .HasMaxLength(100)
             .IsRequired(true);
+
+        builder
+            .Property(b => b.Description)
+            .HasMaxLength(300);
 
         builder
             .Property(b => b.IsPrivate)
@@ -54,22 +61,6 @@ internal class PlaylistTypeConfig : IEntityTypeConfiguration<Playlist>
             .HasForeignKey(b => b.UserId)
             .IsRequired(true)
             .OnDelete(DeleteBehavior.Cascade);
-
-        builder
-           .HasMany(b => b.Songs)
-           .WithMany(b => b.Playlists)
-           .UsingEntity<Dictionary<string, object>>(
-               "PlaylistSong",
-               j => j
-                   .HasOne<Song>()
-                   .WithMany()
-                   .HasForeignKey("SongId")
-                   .OnDelete(DeleteBehavior.NoAction),
-               j => j
-                   .HasOne<Playlist>()
-                   .WithMany()
-                   .HasForeignKey("PlaylistId")
-           );
 
         builder
             .HasMany(b => b.UserLikes)

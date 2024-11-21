@@ -5,13 +5,13 @@ namespace Presentation.Extensions;
 
 public static class ClaimsPrincipalExtnensions
 {
-    public static string GetUserId(this ClaimsPrincipal principal)
+    public static string? GetUserId(this ClaimsPrincipal principal)
     {
-        return principal.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)!.Value;
+        return principal.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
     }
 
-    public static string GetUserEmail(this ClaimsPrincipal principal)
+    public static string? GetUserEmail(this ClaimsPrincipal principal)
     {
-        return principal.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)!.Value;
+        return principal.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value;
     }
 }
