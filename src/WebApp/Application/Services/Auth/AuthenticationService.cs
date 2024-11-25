@@ -1,4 +1,6 @@
-﻿using Application.DTO.Users;
+﻿using Application.Common.Helpers;
+using Application.DTO.Users;
+using Application.Errors;
 using Application.InfrastructureInterfaces;
 using Domain.Entities;
 using Domain.Enums;
@@ -40,13 +42,13 @@ internal class AuthenticationService : IAuthenticationService
         var result = await _userManager.CreateAsync(user, model.Password);
         if (!result.Succeeded)
         {
-            return Result.Fail(result.Errors.Select(err => err.Description));
+            return ResultHelper.ErrorsToResult(result.Errors);
         }
 
         var roleResult = await _userManager.AddToRoleAsync(user, nameof(Role.USER));
         if (!roleResult.Succeeded)
         {
-            return Result.Fail(roleResult.Errors.Select(err => err.Description));
+            return ResultHelper.ErrorsToResult(roleResult.Errors);
         }
 
         await SendConfirmationEmailAsync(user, cancellationToken);
@@ -59,25 +61,25 @@ internal class AuthenticationService : IAuthenticationService
         var user = await _userManager.FindByEmailAsync(model.Email.ToUpper());
         
         if (user is null)
-        { 
-            return Result.Fail("Invalid Email or Password"); 
+        {
+            return new ValidationError("Invalid Email or Password");
         }
 
         if (!await _userManager.CheckPasswordAsync(user, model.Password))
         {
-            return Result.Fail("Invalid Email or Password");
+            return new ValidationError("Invalid Email or Password");
         }
            
         if (!await _userManager.IsEmailConfirmedAsync(user))
         {
-            return Result.Fail("Email confirmation needed");
+            return new ValidationError("Invalid Email or Password");
         }    
         
         Result<TokenDto> result = await CreateTokenAsync(user, populateExp: true, cancellationToken);
 
         if (result.IsFailed)
         {
-            return Result.Fail(result.Errors);
+            return ResultHelper.ErrorsToResult(result.Errors);
         }
 
         var loginResponse = new LoginResponse(user, result.Value);
@@ -103,7 +105,7 @@ internal class AuthenticationService : IAuthenticationService
 
         if (!result.Succeeded)
         {
-            return Result.Fail(result.Errors.Select(err => err.Description));
+            return ResultHelper.ErrorsToResult(result.Errors);
         }
 
         var refreshToken = new TokenBase(refreshTokenString, refreshTokenExpiresAt);
@@ -120,7 +122,7 @@ internal class AuthenticationService : IAuthenticationService
 
         if (result.IsFailed)
         {
-            return Result.Fail(result.Errors);
+            return ResultHelper.ErrorsToResult(result.Errors);
         }
 
         var claimsIdentity = result.Value;
@@ -128,7 +130,7 @@ internal class AuthenticationService : IAuthenticationService
 
         if (isRefreshTokenInvalid())
         {
-            return Result.Fail("Refresh token is invalid or expired");
+            return new ValidationError("Refresh token is invalid or expired");
         }
 
         return await CreateTokenAsync(user!, populateExp: false, cancellationToken);
@@ -155,14 +157,14 @@ internal class AuthenticationService : IAuthenticationService
 
         if (!validationResult.IsValid)
         {
-            return Result.Fail("Invalid Token");
+            return new ValidationError("Invalid Token");
         }
 
         var jwtSecurityToken = validationResult.SecurityToken as JwtSecurityToken;
 
         if (jwtSecurityToken is null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha512, StringComparison.InvariantCultureIgnoreCase))
         {
-            return Result.Fail("Invalid Token");
+            return new ValidationError("Invalid Token");
         }
 
         return validationResult.ClaimsIdentity;
@@ -175,14 +177,14 @@ internal class AuthenticationService : IAuthenticationService
 
         if (user is null)
         {
-            return Result.Fail("User doesn't exist");
+            return new NotFoundError("User cannot be found");
         }
 
         var result = await _userManager.ConfirmEmailAsync(user, model.Token);
 
         if (!result.Succeeded)
         {
-            return Result.Fail(result.Errors.Select(err => err.Description));
+            return ResultHelper.ErrorsToResult(result.Errors);
         }
 
         return Result.Ok();
@@ -194,12 +196,12 @@ internal class AuthenticationService : IAuthenticationService
 
         if (user is null)
         {
-            return Result.Fail("User doesn't exist");
+            return new NotFoundError("User cannot be found");
         }
 
         if (await _userManager.IsEmailConfirmedAsync(user))
         {
-            return Result.Fail("Email is already confirmed");
+            return new ValidationError("Email is already confirmed");
         }
 
         await SendConfirmationEmailAsync(user, cancellationToken);
@@ -213,14 +215,14 @@ internal class AuthenticationService : IAuthenticationService
 
         if (user is null)
         {
-            return Result.Fail("User doesn't exist");
+            return new NotFoundError("User cannot be found");
         }
 
         var result = await _userManager.ResetPasswordAsync(user, model.ResetCode, model.NewPassword);
 
         if (!result.Succeeded)
         {
-            return Result.Fail(result.Errors.Select(err => err.Description));
+            return ResultHelper.ErrorsToResult(result.Errors);
         }
 
         return Result.Ok();
@@ -232,7 +234,7 @@ internal class AuthenticationService : IAuthenticationService
 
         if (user is null)
         {
-            return Result.Fail("User doesn't exist");
+            return new NotFoundError("User cannot be found");
         }
 
         var resetPasswordCode = await _userManager.GeneratePasswordResetTokenAsync(user);
@@ -299,15 +301,5 @@ internal class AuthenticationService : IAuthenticationService
             "Email Verification", 
             url,
             cancellationToken: cancellationToken);
-    }
-
-    public async Task<User?> FindUserAsync(string email)
-    {
-        return await _userManager.FindByEmailAsync(email);
-    }
-
-    public async Task<User?> FindUserByIdAsync(string userId)
-    {
-        return await _userManager.FindByIdAsync(userId);
     }
 }

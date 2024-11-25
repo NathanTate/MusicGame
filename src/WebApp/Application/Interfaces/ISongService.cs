@@ -11,5 +11,6 @@ public interface ISongService
     Task<Result<SongResponse>> UpdateSongAsync(UpdateSongRequest model, CancellationToken cancellationToken = default);
     Task<Result> DeleteSongAsync(int songId, CancellationToken cancellationToken = default);
     Task<Result<SongResponse>> UploadPhotoAsync(int songId, IFormFile photo, CancellationToken cancellationToken = default);
-    Task<Result> DeletePhotoAsync(int songId, CancellationToken cancellationToken = default); 
+    Task<Result> DeletePhotoAsync(int songId, CancellationToken cancellationToken = default);
+    Task<bool> IsSongNameAvailableAsync(string name, CancellationToken cancellationToken = default);
 }

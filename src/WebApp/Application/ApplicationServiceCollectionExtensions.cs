@@ -58,6 +58,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<IGenreService, GenreService>();
         services.AddScoped<ISongService, SongService>();
         services.AddScoped<IPlaylistService, PlaylistService>();
+        services.AddScoped<IUserService, UserService>();
         
         services.AddScoped<ISongAuthorizationService, SongAuthorizationService>();
         services.AddScoped<IPlaylistAuthorizationService, PlaylistAuthorizationService>();

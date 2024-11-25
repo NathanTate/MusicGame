@@ -235,4 +235,9 @@ internal class PlaylistService : IPlaylistService
 
         return Result.Ok();
     }
+
+    public async Task<bool> IsPlaylistNameAvailable(string name, CancellationToken cancellationToken = default)
+    {
+        return await _uow.ExistsAsync<Playlist>(p => p.Name.ToUpper() == name.ToUpper(), cancellationToken);
+    }
 }

@@ -192,4 +192,9 @@ internal class SongService : ISongService
 
         return Result.Ok();
     }
+
+    public async Task<bool> IsSongNameAvailableAsync(string name, CancellationToken cancellationToken = default)
+    {
+        return await _uow.ExistsAsync<Song>(s => s.Name.ToUpper() == name.ToUpper(), cancellationToken);
+    }
 }
