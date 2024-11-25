@@ -86,7 +86,7 @@ public class PlaylistConroller : BaseApiController
         return result.ToHttpResponse(HttpContext);
     }
 
-    [HttpDelete]
+    [HttpDelete("{playlistId}/photo")]
     public async Task<IActionResult> DeletePlaylistPhoto(int playlistId)
     {
         Result result = await _playlistService.DeletePhotoAsync(playlistId);
@@ -94,7 +94,7 @@ public class PlaylistConroller : BaseApiController
         return result.ToHttpResponse(HttpContext);
     }
 
-    [HttpPost("{PlaylistId}/addSong/{SongId}")]
+    [HttpPost("{PlaylistId}/songs/{SongId}")]
     public async Task<IActionResult> AddSongToPlaylist(UpsertSongPlaylistRequest model, [FromServices] IValidator<UpsertSongPlaylistRequest> validator)
     {
         ModelStateDictionary errors = await Validator.ValidateAsync(validator, model, HttpContext.RequestAborted);
@@ -120,11 +120,17 @@ public class PlaylistConroller : BaseApiController
         return result.ToHttpResponse(HttpContext);
     }
 
-    [HttpDelete("{playlistId}/removeSong/{songId}")]
+    [HttpDelete("{playlistId}/songs/{songId}")]
     public async Task<IActionResult> RemoveSongFromPlaylist(int playlistId, int songId)
     {
         Result result = await _playlistService.RemoveSongFromPlaylistAsync(songId, playlistId, HttpContext.RequestAborted);
 
         return result.ToHttpResponse(HttpContext);
+    }
+
+    [HttpGet("nameAvailable")]
+    public async Task<IActionResult> IsPlaylistNameAvailable(string name)
+    {
+        return Ok(await _playlistService.IsPlaylistNameAvailable(name, HttpContext.RequestAborted));
     }
 }

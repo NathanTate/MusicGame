@@ -15,4 +15,5 @@ public interface IPlaylistService
     Task<List<PlaylistResponse>> GetPlaylistsAsync(CancellationToken cancellationToken = default);
     Task<Result<PlaylistResponse>> UploadPhotoAsync(int playlistId, IFormFile photo, CancellationToken cancellationToken = default);
     Task<Result> DeletePhotoAsync(int playlistId, CancellationToken cancellationToken = default);
+    Task<bool> IsPlaylistNameAvailable(string name, CancellationToken cancellationToken = default);
 }

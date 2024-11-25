@@ -90,4 +90,10 @@ public class SongController : BaseApiController
 
         return result.ToHttpResponse(HttpContext);
     }
+
+    [HttpGet("nameAvailable")]
+    public async Task<IActionResult> IsSongNameAvailable(string name)
+    {
+        return Ok(await _songService.IsSongNameAvailableAsync(name, HttpContext.RequestAborted));
+    }
 }
