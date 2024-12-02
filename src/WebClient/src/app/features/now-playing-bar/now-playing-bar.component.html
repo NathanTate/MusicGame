@@ -1,0 +1,32 @@
+<footer class="now-playing-bar surface-card border-round-md">
+  <div class="now-playing-bar-content">
+    <div class="left">
+      <div class="left-content">
+        <div class="image-wrapper">
+          <img src="" alt="">
+        </div>
+        <div>
+          <div>
+            <span class="font-medium"><a routerLink="/"></a></span>
+            <span class=" text-white-alpha-40 text-sm"><a routerLink="/"></a></span>
+          </div>
+          <p-button (onClick)="menu.toggle($event)" [text]="true" [rounded]="true" icon="pi pi-plus"></p-button>
+          <p-menu #menu [popup]="true" [model]="items()" appendTo="body"></p-menu>
+        </div>
+      </div>
+    </div>
+    <div class="center">
+      <p-button [icon]="isPlaying ? 'pi pi-pause' : 'pi pi-play'" (onClick)="onPlayStop()"></p-button>
+      <div>
+        <p-progressBar></p-progressBar>
+      </div>
+    </div>
+    <div class="right">
+      <div class="right-content">
+        <div>
+          <p-button [text]="true" icon="pi pi-volume-up"></p-button>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>

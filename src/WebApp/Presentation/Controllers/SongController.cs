@@ -10,7 +10,7 @@ using Presentation.Extensions;
 
 namespace Presentation.Controllers;
 
-[Route("songs")]
+[Route("api/songs")]
 [Authorize]
 public class SongController : BaseApiController
 {

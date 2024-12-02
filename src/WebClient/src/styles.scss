@@ -1,9 +1,139 @@
-@use '_fonts.scss';
+@import '_fonts.scss';
+@import '_variables.scss';
 
 @import "primeng/resources/themes/arya-orange/theme.css";
 @import "primeng/resources/primeng.css";
+@import "primeflex/primeflex.css";
 @import "primeicons/primeicons.css";
 
 body {
   font-family: 'Roboto', sans-serif;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  display: inline-block;
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+ul,
+ol {
+  list-style-position: inside;
+  margin: 0;
+  padding: 0;
+}
+
+.card {
+  background-color: var(--surface-card);
+  border: var(--card-border);
+  padding: 2rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+}
+
+.max-w-auth-card {
+  max-width: 35rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+
+  label {
+    display: inline-block;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-control {
+    display: block;
+    width: 100%;
+  }
+
+  .is-invalid {
+    border-color: red;
+  }
+}
+
+.message-block {
+  .error-message {
+    display: none;
+    color: red;
+  }
+
+  .error-message:first-child {
+    display: block;
+  }
+
+}
+
+.text-danger {
+  color: red;
+}
+
+.p-toolbar {
+  padding: 0.5rem 0.75rem 0rem;
+  background: var(--surface-b);
+  backdrop-filter: blur(8px);
+  border: none;
+  margin-top: -$main-view-padding;
+  margin-inline: -$main-view-padding;
+}
+
+.scrollable {
+  overflow-y: auto;
+}
+
+.scrollbar-horizontal {
+  position: relative;
+  height: 100%;
+}
+
+.scrollbar-horizontal::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+.scrollbar-horizontal::-webkit-scrollbar {
+  width: $scrollbar-width;
+}
+
+.scrollbar-horizontal::-webkit-scrollbar-thumb {
+  background-color: var(--surface-200);
+  border-radius: 4px;
+}
+
+.x-lines-limit {
+  --max-lines: 1;
+
+  display: -webkit-box;
+  -webkit-line-clamp: var(--max-lines);
+  line-clamp: var(--max-lines);
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.icon-wrapper {
+  --size: 24px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.icon-wrapper>svg {
+  width: var(--size);
+  aspect-ratio: 1;
+  fill: currentColor;
 }

@@ -1,0 +1,9 @@
+@import '../../../variables';
+
+.content-layout {
+  height: 100%;
+  width: 100%;
+  border-radius: $global-border-radius;
+  padding: 1rem;
+  background-color: var(--surface-card);
+}

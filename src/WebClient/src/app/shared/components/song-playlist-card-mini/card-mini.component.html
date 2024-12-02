@@ -1,0 +1,13 @@
+<article class="x-card border-radius-global w-full h-full" [attr.aria-labelledby]="labelById">
+  <div class="flex align-items-center ">
+    <div class="surface-200 image-preview border-radius-global" [style.--image-size]="imageSizePx() + 'px'">
+      @if (imgSrc()) {
+        <img [src]="imgSrc()" [alt]="title() + 'image'">
+      } @else {
+      }
+    </div>
+    <div class="flex-1">
+      <p class="text-sm mx-2 my-0 x-lines-limit" [id]="labelById">{{title()}}</p>
+    </div>
+  </div>
+</article>

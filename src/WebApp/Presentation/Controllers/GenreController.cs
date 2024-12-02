@@ -11,7 +11,7 @@ using Presentation.Extensions;
 
 namespace Presentation.Controllers;
 
-[Route("genres")]
+[Route("api/genres")]
 [Authorize(Roles = nameof(Role.ADMIN))]
 public class GenreController : BaseApiController
 {

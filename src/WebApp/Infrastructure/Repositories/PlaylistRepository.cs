@@ -22,8 +22,9 @@ internal class PlaylistRepository : IPlaylistRepository
         return _dbContext.Playlists
             .AsNoTracking()
             .Where(x => !x.IsPrivate)
-            .Include(x => x.Songs)
-                .ThenInclude(s => s.Song)
+            .Include(x => x.User)
+            // .Include(x => x.Songs)
+            //     .ThenInclude(s => s.Song)
             .ToListAsync(cancellationToken);
     }
 

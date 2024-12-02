@@ -51,6 +51,6 @@ internal class GenreRepository : IGenreRepository
 
     public void Update(Genre model)
     {
-        _dbContext.Update(model);
+        _dbContext.Genres.Update(model);
     }
 }
