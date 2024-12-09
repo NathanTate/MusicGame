@@ -10,7 +10,7 @@ using Presentation.Extensions;
 
 namespace Presentation.Controllers;
 
-[Route("playlists")]
+[Route("api/playlists")]
 [Authorize]
 public class PlaylistConroller : BaseApiController
 {
@@ -29,7 +29,7 @@ public class PlaylistConroller : BaseApiController
 
     [HttpGet("/api/{userId}/playlists")]
     public async Task<IActionResult> GetUserPlaylists(string userId)
-    { 
+    {
         Result<List<PlaylistResponse>> result = null;
         return Ok();
     }
@@ -47,7 +47,7 @@ public class PlaylistConroller : BaseApiController
     [HttpPost]
     public async Task<IActionResult> CreatePlaylist()
     {
-        var playlist = await _playlistService.CreatePlaylistAsync(User.GetUserId(), HttpContext.RequestAborted);
+        var playlist = await _playlistService.CreatePlaylistAsync(User.GetUserId()!, HttpContext.RequestAborted);
 
         return CreatedAtAction(nameof(GetPlaylist), new { playlistId = playlist.PlaylistId }, playlist);
     }
@@ -56,7 +56,7 @@ public class PlaylistConroller : BaseApiController
     public async Task<IActionResult> UpdatePlaylist(UpdatePlaylistRequest model, [FromServices] IValidator<UpdatePlaylistRequest> validator)
     {
         ModelStateDictionary errors = await Validator.ValidateAsync(validator, model, HttpContext.RequestAborted);
-        
+
         if (errors.Count > 0)
             return ValidationProblem(errors);
 
@@ -98,7 +98,7 @@ public class PlaylistConroller : BaseApiController
     public async Task<IActionResult> AddSongToPlaylist(UpsertSongPlaylistRequest model, [FromServices] IValidator<UpsertSongPlaylistRequest> validator)
     {
         ModelStateDictionary errors = await Validator.ValidateAsync(validator, model, HttpContext.RequestAborted);
-        
+
         if (errors.Count > 0)
             return ValidationProblem(errors);
 

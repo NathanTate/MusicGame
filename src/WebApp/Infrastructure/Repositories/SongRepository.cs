@@ -51,6 +51,7 @@ internal class SongRepository : ISongRepository
         return await _dbContext.Songs
             .AsNoTracking()
             .Include(x => x.Photo)
+            .Include(x => x.User)
             .ToListAsync(cancellationToken);
     }
 
@@ -67,7 +68,7 @@ internal class SongRepository : ISongRepository
             query.AsNoTracking();
         }
 
-        return await query.FirstOrDefaultAsync(cancellationToken);       
+        return await query.FirstOrDefaultAsync(cancellationToken);
     }
 
     public void Update(Song model)
