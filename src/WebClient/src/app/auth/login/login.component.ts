@@ -37,8 +37,6 @@ export class LoginComponent implements OnInit {
       password: [null, [Validators.required]],
       rememberMe: [this.emailDefault ? true : false]
     })
-
-    console.log(this.form)
   }
 
   onSubmit() {

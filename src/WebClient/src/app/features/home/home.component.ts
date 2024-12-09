@@ -26,24 +26,34 @@ export class HomeComponent implements OnInit {
     'https://i.scdn.co/image/ab67616d00004851c09f7d089be6dac618cf178f',
     'https://i.scdn.co/image/ab67616d0000485105153032430054873bb5571c',
   ])
+  animationFrameRequested = false;
 
   onScroll(event: Event) {
     const element = event.target as HTMLElement;
 
-    if (!element) {
-      return;
+    if (!this.animationFrameRequested) {
+      window.requestAnimationFrame(() => {
+        this.updateStylesOnScroll(element)
+        this.animationFrameRequested = false;
+      })
+    } else {
+      this.animationFrameRequested = true;
     }
+  }
 
+  updateStylesOnScroll(element: HTMLElement) {
     const scrollTop = element.scrollTop;
+    let opacity = 0;
 
     if (scrollTop === 0) {
-      element.style.setProperty('--header-opacity', '0');
+      opacity = 0;
     } else if (scrollTop >= 100) {
-      element.style.setProperty('--header-opacity', '1');
+      opacity = 1;
     } else if (scrollTop > 0 && scrollTop <= 100) {
-      const opacity = scrollTop / 100;
-      element.style.setProperty('--header-opacity', opacity.toString());
+      opacity = scrollTop / 100;
     }
+
+    element.style.setProperty('--header-opacity', opacity.toString());
   }
 
   private songService = inject(SongService);

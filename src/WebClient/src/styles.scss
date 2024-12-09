@@ -35,6 +35,16 @@ ol {
   padding: 0;
 }
 
+.visually-hidden {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
 .card {
   background-color: var(--surface-card);
   border: var(--card-border);
@@ -96,12 +106,11 @@ ol {
 }
 
 .scrollbar-horizontal {
-  position: relative;
   height: 100%;
 }
 
 .scrollbar-horizontal::-webkit-scrollbar-track {
-  background-color: transparent;
+  background-color: var(--surface-ground);
 }
 
 .scrollbar-horizontal::-webkit-scrollbar {
@@ -133,7 +142,14 @@ ol {
 }
 
 .icon-wrapper>svg {
+  min-width: var(--size);
+  min-height: var(--size);
   width: var(--size);
   aspect-ratio: 1;
+  min-width: var(--size);
   fill: currentColor;
+}
+
+.p-data-table>tr>th {
+  background: transparent;
 }

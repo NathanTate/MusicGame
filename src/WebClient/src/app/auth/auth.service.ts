@@ -8,6 +8,7 @@ import { TokenDto } from "./models/tokenDto";
 import { tap } from "rxjs";
 import { AuthData } from "./models/authData";
 import { Router } from "@angular/router";
+import { AudioService } from "../core/services/audio.service";
 
 @Injectable({
   providedIn: 'root'
@@ -19,6 +20,7 @@ export class AuthService {
 
   private http = inject(HttpClient);
   private router = inject(Router);
+  private audioService = inject(AudioService);
 
   constructor() {
     const authDataString = localStorage.getItem("authData");
@@ -41,6 +43,7 @@ export class AuthService {
 
   logout() {
     this._authData.set(null);
+    this.audioService.stop();
     localStorage.removeItem('authData');
     this.router.navigate(['/login']);
   }

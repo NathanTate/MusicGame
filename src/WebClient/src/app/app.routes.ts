@@ -27,6 +27,7 @@ export const routes: Routes = [
       },
       {
         path: 'playlist/:id',
+        runGuardsAndResolvers: 'always',
         resolve: {
           playlist: playlistResolver
         },

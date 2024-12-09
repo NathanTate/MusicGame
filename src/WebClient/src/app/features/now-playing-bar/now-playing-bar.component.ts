@@ -1,27 +1,34 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, HostListener, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Button } from 'primeng/button';
-import { MenuModule } from 'primeng/menu';
-import { ProgressBarModule } from 'primeng/progressbar';
 import { SongResponse } from '../../core/models/songResponse';
 import { SongService } from '../../core/services/song.service';
 import { MenuItem } from 'primeng/api';
 import { AudioService } from '../../core/services/audio.service';
+import { AsyncPipe, NgIf } from '@angular/common';
+import { ContextMenuModule } from 'primeng/contextmenu';
+import { DraggableBarComponent } from '../../shared/components/draggable-bar/draggable-bar.component';
+import { take } from 'rxjs';
 
 @Component({
   selector: 'app-now-playing-bar',
   standalone: true,
-  imports: [Button, MenuModule, RouterLink, ProgressBarModule],
+  imports: [Button, ContextMenuModule, RouterLink, AsyncPipe, NgIf, DraggableBarComponent],
   templateUrl: './now-playing-bar.component.html',
   styleUrl: './now-playing-bar.component.scss'
 })
 export class NowPlayingBarComponent implements OnInit {
-  song = signal<SongResponse | null>(null);
   items = signal<MenuItem[] | undefined>(undefined);
-  isPlaying: boolean = false;
-
   private songService = inject(SongService);
   private audioService = inject(AudioService);
+  state$ = this.audioService.state$;
+
+  @HostListener('document:keyup.Space')
+  onSpaceUp() {
+    this.state$.pipe(take(1)).subscribe((state) => {
+      state.playing ? this.onPause() : this.onPlay();
+    })
+  }
 
   ngOnInit(): void {
     this.items.set([
@@ -30,28 +37,21 @@ export class NowPlayingBarComponent implements OnInit {
         label: 'text-goes-here'
       }
     ])
-    this.getSong(2);
   }
 
-  playSong() {
+  onPlayingBarValueChange(value: number) {
+    this.audioService.seekTo(value);
+  }
+
+  onPlay() {
     this.audioService.play();
   }
 
-  onPlayStop() {
-    if (this.isPlaying) {
-      this.audioService.pause();
-      this.isPlaying = false;
-    } else {
-      this.audioService.play();
-      this.isPlaying = true;
-    }
+  onPause() {
+    this.audioService.pause();
   }
 
   getSong(songId: number) {
-    this.songService.getSong(songId).subscribe((song) => {
-      this.audioService.setTrack(song, true);
-      this.isPlaying = true;
-      this.song.set(song);
-    })
+    
   }
 }
