@@ -9,7 +9,6 @@ using Application.Services.Auth;
 using Application.Interfaces;
 using Application.Services;
 using Application.Common.UserHelpers;
-using Application.Authorization;
 
 namespace Application;
 public static class ApplicationServiceCollectionExtensions
@@ -44,6 +43,16 @@ public static class ApplicationServiceCollectionExtensions
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecurityKey)),
                     ClockSkew = TimeSpan.FromSeconds(30)
                 };
+
+                options.Events = new JwtBearerEvents()
+                {
+                    OnMessageReceived = context =>
+                    {
+                        context.HttpContext.Request.Cookies.TryGetValue("accessToken", out string? accessToken);
+                        context.Token = accessToken;
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
         services.AddAuthorization();
@@ -59,9 +68,6 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<ISongService, SongService>();
         services.AddScoped<IPlaylistService, PlaylistService>();
         services.AddScoped<IUserService, UserService>();
-        
-        services.AddScoped<ISongAuthorizationService, SongAuthorizationService>();
-        services.AddScoped<IPlaylistAuthorizationService, PlaylistAuthorizationService>();
 
         return services;
     }

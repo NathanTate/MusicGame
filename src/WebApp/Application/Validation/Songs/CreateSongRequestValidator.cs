@@ -1,4 +1,4 @@
-﻿using Application.DTO.Songs;
+﻿using Application.Models.Songs;
 using Domain.Primitives;
 using FluentValidation;
 

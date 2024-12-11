@@ -1,5 +1,5 @@
 ﻿using Application.Common.Helpers;
-using Application.DTO.Playlists;
+using Application.Models.Playlists;
 using Application.Interfaces;
 using FluentResults;
 using FluentValidation;
@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Presentation.Extensions;
+using Application.Models.Queries;
 
 namespace Presentation.Controllers;
 
@@ -22,9 +23,9 @@ public class PlaylistConroller : BaseApiController
 
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> GetPlaylists()
+    public async Task<IActionResult> GetPlaylists([FromQuery] PlaylistsQueryRequest query)
     {
-        return Ok(await _playlistService.GetPlaylistsAsync(HttpContext.RequestAborted));
+        return Ok(await _playlistService.GetPlaylistsAsync(query, HttpContext.RequestAborted));
     }
 
     [HttpGet("/api/{userId}/playlists")]
@@ -38,7 +39,7 @@ public class PlaylistConroller : BaseApiController
     [AllowAnonymous]
     public async Task<IActionResult> GetPlaylist(int playlistId)
     {
-        Result<PlaylistResponse> result = await _playlistService.GetPlaylistAsync(playlistId, User.GetUserId(), HttpContext.RequestAborted);
+        Result<PlaylistResponse> result = await _playlistService.GetPlaylistAsync(playlistId, HttpContext.RequestAborted);
 
         return result.ToHttpResponse(HttpContext);
     }
@@ -47,9 +48,8 @@ public class PlaylistConroller : BaseApiController
     [HttpPost]
     public async Task<IActionResult> CreatePlaylist()
     {
-        var playlist = await _playlistService.CreatePlaylistAsync(User.GetUserId()!, HttpContext.RequestAborted);
-
-        return CreatedAtAction(nameof(GetPlaylist), new { playlistId = playlist.PlaylistId }, playlist);
+        Result<PlaylistResponse> result = await _playlistService.CreatePlaylistAsync(HttpContext.RequestAborted);
+        return result.ToCreateHttpResponse(HttpContext);
     }
 
     [HttpPut]
@@ -68,7 +68,7 @@ public class PlaylistConroller : BaseApiController
     [HttpDelete("{playlistId}")]
     public async Task<IActionResult> DeletePlaylist(int playlistId)
     {
-        Result result = await _playlistService.DeletePlaylistAsync(playlistId, User.GetUserId()!);
+        Result result = await _playlistService.DeletePlaylistAsync(playlistId);
 
         return result.ToHttpResponse(HttpContext);
     }
@@ -102,7 +102,7 @@ public class PlaylistConroller : BaseApiController
         if (errors.Count > 0)
             return ValidationProblem(errors);
 
-        Result result = await _playlistService.AddSongToPlaylistAsync(model, User.GetUserId()!, HttpContext.RequestAborted);
+        Result result = await _playlistService.AddSongToPlaylistAsync(model, HttpContext.RequestAborted);
 
         return result.ToHttpResponse(HttpContext);
     }

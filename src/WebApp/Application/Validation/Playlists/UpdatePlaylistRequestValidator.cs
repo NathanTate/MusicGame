@@ -1,4 +1,4 @@
-﻿using Application.DTO.Playlists;
+﻿using Application.Models.Playlists;
 using FluentValidation;
 
 namespace Application.Validation.Playlists;

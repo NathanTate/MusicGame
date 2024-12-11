@@ -1,4 +1,4 @@
-﻿using Application.DTO.Genres;
+﻿using Application.Models.Genres;
 using FluentValidation;
 
 namespace Application.Validation.Genres;

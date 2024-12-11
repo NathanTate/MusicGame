@@ -1,6 +1,6 @@
 ﻿using Application.Common.Helpers;
-using Application.DTO;
-using Application.DTO.Users;
+using Application.Models;
+using Application.Models.Users;
 using Application.Interfaces;
 using Application.Services.Auth;
 using FluentResults;
@@ -44,17 +44,23 @@ public class AccountController : BaseApiController
 
         Result<LoginResponse> result = await _authenticationService.LoginAsync(model);
 
+        if (result.IsSuccess)
+            SetCookieToken(result.Value.Tokens.accessToken);
+
         return result.ToHttpResponse(HttpContext);
     }
 
     [HttpPost("refreshToken")]
-    public async Task<IActionResult> RefreshToken([FromBody] TokenDto model, [FromServices] IValidator<TokenDto> validator)
+    public async Task<IActionResult> RefreshToken([FromBody] TokenDto refreshToken, [FromServices] IValidator<TokenDto> validator)
     {
-        ModelStateDictionary errors = await Validator.ValidateAsync(validator, model, HttpContext.RequestAborted);
+        ModelStateDictionary errors = await Validator.ValidateAsync(validator, refreshToken, HttpContext.RequestAborted);
         if (errors.Count > 0)
             return ValidationProblem(errors);
 
-        Result<TokenDto> result = await _authenticationService.RefreshTokenAsync(model);
+        Result<TokenWrapper> result = await _authenticationService.RefreshTokenAsync(refreshToken);
+
+        if (result.IsSuccess)
+            SetCookieToken(result.Value.accessToken);
 
         return result.ToHttpResponse(HttpContext);
     }
@@ -118,5 +124,18 @@ public class AccountController : BaseApiController
         Result<UserResponse> result = await _userService.UpdateUserProfileAsync(model, User.GetUserId()!, HttpContext.RequestAborted);
 
         return result.ToHttpResponse(HttpContext);
+    }
+
+    private void SetCookieToken(TokenDto accessToken)
+    {
+        HttpContext.Response.Cookies.Append("accessToken", accessToken.Token,
+        new CookieOptions
+        {
+            HttpOnly = true,
+            Expires = accessToken.ExpiresAt,
+            IsEssential = true,
+            Secure = true,
+            SameSite = SameSiteMode.None,
+        });
     }
 }
