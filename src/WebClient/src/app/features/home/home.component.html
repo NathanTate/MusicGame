@@ -1,0 +1,78 @@
+<div class="layout scrollable scrollbar-horizontal" (scroll)="onScroll($event)">
+  <header class="header">
+    <div class="h-full flex align-items-center gap-3 px-4">
+      <p-skeleton width="10rem" styleClass="mb-2" />
+      <p-skeleton width="10rem" styleClass="mb-2" />
+      <p-skeleton width="10rem" styleClass="mb-2" />
+    </div>
+  </header>
+  <section class="content-layout">
+    <div class="grid-container-header">
+      @for (song of songs(); track $index) {
+        @if ($index < 4) {
+          <app-card-mini [title]="song.name"/>
+        }
+      }
+    </div>
+    <section class="content-section">
+      <div>
+        <div class="flex justify-content-between align-items-center">
+          <div>
+            <h2 class="text-lg md:text-2xl">Recommended today</h2>
+          </div>
+          <p-button label="See more" [link]="true" styleClass="text-sm md:text-base"></p-button>
+        </div>
+      </div>
+      <div class="grid-container">
+        @for (song of songs(); track song.songId) {
+          <app-track-playlist-card [song]="song"/>
+        }
+      </div>
+    </section>
+    <section class="content-section">
+      <div>
+        <div class="flex justify-content-between align-items-center">
+          <div>
+            <h2 class="text-lg md:text-2xl">Recommended today</h2>
+          </div>
+          <p-button label="See more" [link]="true" styleClass="text-sm md:text-base"></p-button>
+        </div>
+      </div>
+      <div class="grid-container">
+        @for (song of songs(); track song.songId) {
+          <app-track-playlist-card [song]="song"/>
+        }
+      </div>
+    </section>
+    <section class="content-section">
+      <div>
+        <div class="flex justify-content-between align-items-center">
+          <div>
+            <h2 class="text-lg md:text-2xl">Recommended today</h2>
+          </div>
+          <p-button label="See more" [link]="true" styleClass="text-sm md:text-base"></p-button>
+        </div>
+      </div>
+      <div class="grid-container">
+        @for (song of songs(); track song.songId) {
+          <app-track-playlist-card [song]="song"/>
+        }
+      </div>
+    </section>
+    <section class="content-section">
+      <div>
+        <div class="flex justify-content-between align-items-center">
+          <div>
+            <h2 class="text-lg md:text-2xl">Recommended today</h2>
+          </div>
+          <p-button label="See more" [link]="true" styleClass="text-sm md:text-base"></p-button>
+        </div>
+      </div>
+      <div class="grid-container">
+        @for (song of songs(); track song.songId) {
+          <app-track-playlist-card [song]="song"/>
+        }
+      </div>
+    </section>
+  </section>
+</div>

@@ -12,7 +12,7 @@ using Presentation.Extensions;
 
 namespace Presentation.Controllers;
 
-[Route("account")]
+[Route("api/account")]
 public class AccountController : BaseApiController
 {
     private readonly IAuthenticationService _authenticationService;
@@ -65,7 +65,7 @@ public class AccountController : BaseApiController
         return result.ToHttpResponse(HttpContext);
     }
 
-    [HttpPost("confirmEmail")]
+    [HttpPost("confirm-email")]
     public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailRequest model, [FromServices] IValidator<ConfirmEmailRequest> validator)
     {
         ModelStateDictionary errors = await Validator.ValidateAsync(validator, model, HttpContext.RequestAborted);
@@ -77,7 +77,7 @@ public class AccountController : BaseApiController
         return result.ToHttpResponse(HttpContext);
     }
 
-    [HttpPost("SendResetPasswordCode")]
+    [HttpPost("send-reset-passwordCode")]
     public async Task<IActionResult> SendResetPasswordCode([FromBody] EmailRequest model, [FromServices] IValidator<EmailRequest> validator)
     {
         ModelStateDictionary errors = await Validator.ValidateAsync(validator, model, HttpContext.RequestAborted);
@@ -89,8 +89,8 @@ public class AccountController : BaseApiController
         return result.ToHttpResponse(HttpContext);
     }
 
-    [HttpPost("resetPassword")]
-    public async Task<IActionResult> ResentPassword([FromBody] ResetPasswordRequest model, [FromServices] IValidator<ResetPasswordRequest> validator)
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest model, [FromServices] IValidator<ResetPasswordRequest> validator)
     {
         ModelStateDictionary errors = await Validator.ValidateAsync(validator, model, HttpContext.RequestAborted);
         if (errors.Count > 0)
@@ -101,7 +101,7 @@ public class AccountController : BaseApiController
         return result.ToHttpResponse(HttpContext);
     }
 
-    [HttpPost("resendConfirmationEmail")]
+    [HttpPost("resend-confirmation-email")]
     public async Task<IActionResult> ResendConfirmationEmail([FromBody] EmailRequest model, [FromServices] IValidator<EmailRequest> validator)
     {
         ModelStateDictionary errors = await Validator.ValidateAsync(validator, model, HttpContext.RequestAborted);

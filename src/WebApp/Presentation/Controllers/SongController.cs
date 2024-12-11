@@ -11,7 +11,7 @@ using Application.Models.Queries;
 
 namespace Presentation.Controllers;
 
-[Route("songs")]
+[Route("api/songs")]
 [Authorize]
 public class SongController : BaseApiController
 {

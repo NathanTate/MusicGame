@@ -1,0 +1,44 @@
+@import '../../../variables.scss';
+
+.main-grid {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto 1fr auto;
+  gap: $panel-gap;
+  height: 100vh;
+  min-height: 100%;
+  width: 100%;
+  position: relative;
+  padding: $main-view-padding;
+  overflow: hidden;
+
+  grid-template-areas:
+    "global-nav global-nav global-nav"
+    "left-sidebar main-view main-view"
+    "footer footer footer";
+}
+
+.header {
+  position: relative;
+  z-index: 300;
+  grid-area: global-nav;
+}
+
+.main {
+  position: relative;
+  z-index: 100;
+  grid-area: main-view;
+  overflow: hidden;
+}
+
+.footer {
+  position: relative;
+  z-index: 400;
+  grid-area: footer;
+}
+
+.sidebar {
+  position: relative;
+  z-index: 200;
+  grid-area: left-sidebar;
+}

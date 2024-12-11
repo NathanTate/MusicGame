@@ -16,6 +16,16 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddPresentation();
 builder.Services.AddApplicationLayer(builder.Configuration);
 builder.Services.AddInfrastructureLayer(builder.Configuration);
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Default", policy =>
+    {
+        policy.WithOrigins("http://localhost:4200")
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
+    });
+});
 
 var app = builder.Build();
 
@@ -32,7 +42,7 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 
-app.UseCors();
+app.UseCors("Default");
 
 app.UseAuthentication();
 app.UseAuthorization();

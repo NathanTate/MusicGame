@@ -46,6 +46,7 @@
 //        return true;
 //    }
 
+
 //    public async Task<List<Song>> GetAllAsync(string? userId = null, CancellationToken cancellationToken = default)
 //    {
 //        return await _dbContext.Songs
@@ -54,6 +55,7 @@
 //            .Include(x => x.Photo)
 //            .ToListAsync(cancellationToken);
 //    }
+
 
 //    public async Task<Song?> GetByIdAsync(int songId, bool tracking = true, string? userId = null, CancellationToken cancellationToken = default)
 //    {
@@ -69,8 +71,10 @@
 //            query.AsNoTracking();
 //        }
 
+
 //        return await query.FirstOrDefaultAsync(cancellationToken);       
 //    }
+
 
 //    public void Update(Song model)
 //    {

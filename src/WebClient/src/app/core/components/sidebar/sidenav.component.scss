@@ -1,0 +1,119 @@
+@import '../../../../variables.scss';
+
+:host {
+  min-height: 0;
+}
+
+.sidenav {
+  --header-height: 66px;
+  height: 100%;
+  width: 100%;
+  border-radius: $global-border-radius;
+  background-color: var(--surface-card);
+  overflow: hidden;
+
+  .sidenav-header {
+    &.shadow {
+      box-shadow: 0 8px 10px rgba(19, 19, 19, 0.6)
+    }
+  }
+
+  .sidenav-content {
+    height: calc(100% - var(--header-height) - 8px);
+    scrollbar-gutter: (8px);
+  }
+}
+
+.sidenav[expanded="true"] {
+  width: $side-nav-width-expanded;
+
+  .sidenav-header {
+    padding: 12px;
+  }
+
+  .sidenav-content {
+    padding-inline: 8px;
+
+    &.overflowing {
+      padding-right: 0;
+    }
+  }
+}
+
+.sidenav[expanded="false"] {
+  width: $side-nav-width;
+
+  .sidenav-header {
+    padding: 12px calc(($side-nav-width - 42px) / 2);
+  }
+
+  .sidenav-content {
+    padding-inline: calc(($side-nav-width - 64px) / 2);
+
+    &.overflowing {
+      padding-right: 0;
+    }
+  }
+
+}
+
+.playlist-text {
+  >* {
+    padding: 0;
+    margin: 0;
+  }
+
+  display: grid;
+  gap: 4px;
+}
+
+.playlist-item {
+  padding: 8px;
+  transition: background-color 200ms;
+  border-radius: 4px;
+
+  &:hover {
+    background-color: var(--surface-hover);
+    cursor: pointer;
+  }
+
+  &.active {
+    background-color: var(--surface-hover);
+  }
+
+  .play-hover-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 4px;
+    background-color: rgba(0, 0, 0, 0.2);
+    width: 48px;
+    height: 48px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    transition: opacity 200ms;
+  }
+
+  .playlist-image-wrapper {
+    width: 48px;
+    height: 48px;
+    background-color: var(--surface-100);
+    border-radius: 4px;
+
+    >* {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+    }
+  }
+}
+
+.playlist-item:hover {
+  .play-hover-btn {
+    opacity: 1;
+  }
+}

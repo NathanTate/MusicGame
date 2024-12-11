@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Presentation.Controllers;
 
-[Route("users")]
+[Route("api/users")]
 [Authorize]
 public class UserController : BaseApiController
 {
@@ -29,7 +29,7 @@ public class UserController : BaseApiController
             return NotFound($"User with email {email} cannot be found");
         }
 
-        return Ok(_mapper.Map<UserResponse>(user)); 
+        return Ok(_mapper.Map<UserResponse>(user));
     }
 
     [HttpGet("byId/{userId}")]
@@ -37,7 +37,7 @@ public class UserController : BaseApiController
     {
         var user = await _userManager.FindByIdAsync(userId);
 
-        if (user is null) 
+        if (user is null)
         {
             return NotFound($"User with id {userId} cannot be found");
         }

@@ -7,6 +7,7 @@ using Domain.Interfaces;
 using Domain.Primitives;
 using FluentResults;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -59,8 +60,10 @@ internal class AuthenticationService : IAuthenticationService
 
     public async Task<Result<LoginResponse>> LoginAsync(LoginRequest model, CancellationToken cancellationToken = default)
     {
-        var user = await _userManager.FindByEmailAsync(model.Email.ToUpper());
-        
+        var user = await _userManager.Users
+            .Include(u => u.Photo)
+            .SingleOrDefaultAsync(u => u.NormalizedEmail == model.Email.ToUpper());
+
         if (user is null)
         {
             return new ValidationError("Invalid Email or Password");
@@ -70,12 +73,12 @@ internal class AuthenticationService : IAuthenticationService
         {
             return new ValidationError("Invalid Email or Password");
         }
-           
+
         if (!await _userManager.IsEmailConfirmedAsync(user))
         {
             return new ValidationError("Invalid Email or Password");
-        }    
-        
+        }
+
         Result<TokenWrapper> result = await CreateTokenAsync(user, populateExp: true, cancellationToken);
 
         if (result.IsFailed)
@@ -94,8 +97,8 @@ internal class AuthenticationService : IAuthenticationService
 
         TokenDto accessToken = GenerateToken(user);
         string refreshTokenString = GenerateRefreshToken();
-        var refreshTokenExpiresAt = populateExp 
-            ? DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpiresInDays) 
+        var refreshTokenExpiresAt = populateExp
+            ? DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpiresInDays)
             : user.RefreshTokenExpiryTime ?? DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpiresInDays);
 
 
@@ -135,7 +138,7 @@ internal class AuthenticationService : IAuthenticationService
 
         return await CreateTokenAsync(user!, populateExp: false, cancellationToken);
 
-        bool isRefreshTokenInvalid() => user is null || user.RefreshToken != refreshToken.Token 
+        bool isRefreshTokenInvalid() => user is null || user.RefreshToken != refreshToken.Token
             || user.RefreshTokenExpiryTime < DateTime.UtcNow;
     }
 
@@ -240,9 +243,9 @@ internal class AuthenticationService : IAuthenticationService
         var resetPasswordCode = await _userManager.GeneratePasswordResetTokenAsync(user);
 
         await _emailSender.SendAsync(
-            user.Email, 
-            "Password Reset", 
-            $"Enter the code to proceed: {resetPasswordCode}", 
+            user.Email,
+            "Password Reset",
+            $"Enter the code to proceed: {resetPasswordCode}",
             cancellationToken: cancellationToken);
 
         return Result.Ok();
@@ -295,10 +298,10 @@ internal class AuthenticationService : IAuthenticationService
         var emailVerificationToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
 
         var url = $"Click this link for verification https://localhost:7221/account/verifyEmail?token={emailVerificationToken}&email={user.Email}";
-        
+
         await _emailSender.SendAsync(
-            user.Email, 
-            "Email Verification", 
+            user.Email,
+            "Email Verification",
             url,
             cancellationToken: cancellationToken);
     }

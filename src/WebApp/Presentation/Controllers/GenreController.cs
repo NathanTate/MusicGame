@@ -12,7 +12,7 @@ using Application.Models.Queries;
 
 namespace Presentation.Controllers;
 
-[Route("genres")]
+[Route("api/genres")]
 [Authorize(Roles = nameof(Role.ADMIN))]
 public class GenreController : BaseApiController
 {

@@ -10,6 +10,7 @@ public sealed class LoginResponse
         Email = user.Email!;
         Username = user.DisplayName;
         Roles = user.Roles;
+        ProfilePhotoUrl = user.Photo?.URL;
         Tokens = tokens;
     }
     public string UserId { get; set; }
@@ -17,4 +18,5 @@ public sealed class LoginResponse
     public string Username { get; set; }
     public List<string> Roles { get; set; }
     public TokenWrapper Tokens { get; set; }
+    public string? ProfilePhotoUrl { get; set; }
 }
