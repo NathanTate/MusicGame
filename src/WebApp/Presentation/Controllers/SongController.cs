@@ -1,5 +1,5 @@
 ﻿using Application.Common.Helpers;
-using Application.DTO.Songs;
+using Application.Models.Songs;
 using Application.Interfaces;
 using FluentResults;
 using FluentValidation;
@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Presentation.Extensions;
+using Application.Models.Queries;
 
 namespace Presentation.Controllers;
 
@@ -27,25 +28,23 @@ public class SongController : BaseApiController
         if (errors.Count > 0)
             return ValidationProblem(errors);
 
-        Result<SongResponse> result = await _songService.CreateSongAsync(model, User.GetUserId()!, HttpContext.RequestAborted);
+        Result<SongResponse> result = await _songService.CreateSongAsync(model, HttpContext.RequestAborted);
 
         return result.ToCreateHttpResponse(HttpContext);
     }
 
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> GetSongs()
+    public async Task<IActionResult> GetSongs([FromQuery] SongsQueryRequest query)
     {
-        List<SongResponse> songs = await _songService.GetSongsAsync(HttpContext.RequestAborted);
-
-        return Ok(songs);
+        return Ok(await _songService.GetSongsAsync(query, HttpContext.RequestAborted));
     }
 
     [HttpGet("{songId}")]
     [AllowAnonymous]
     public async Task<IActionResult> GetSong(int songId)
     {
-        Result<SongResponse> result = await _songService.GetSongAsync(songId, User.GetUserId(), HttpContext.RequestAborted);
+        Result<SongResponse> result = await _songService.GetSongAsync(songId, HttpContext.RequestAborted);
 
         return result.ToHttpResponse(HttpContext);
     }

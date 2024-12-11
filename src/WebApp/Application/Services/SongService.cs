@@ -1,40 +1,53 @@
-﻿using Application.Authorization;
-using Application.DTO.Songs;
+﻿using Application.Models.Songs;
 using Application.Errors;
-using Application.InfrastructureInterfaces;
 using Application.Interfaces;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Enums;
 using FluentResults;
 using Microsoft.AspNetCore.Http;
+using Domain.Interfaces;
+using Infrastructure.Context;
+using Microsoft.EntityFrameworkCore;
+using AutoMapper.QueryableExtensions;
+using Application.Common.UserHelpers;
+using Application.Models.Queries;
+using Application.Models;
+using System.Linq.Expressions;
 
 namespace Application.Services;
 
 internal class SongService : ISongService
 {
-    private readonly IUnitOfWork _uow;
+    private readonly AppDbContext _dbContext;
     private readonly IMapper _mapper;
     private readonly IFileHandler _fileHandler;
-    private readonly ISongAuthorizationService _songAuthorizationService;
-    public SongService(IUnitOfWork uow, IMapper mapper, IFileHandler fileHandler, ISongAuthorizationService songAuthorizationService)
+    private readonly IUserContext _userContext;
+    public SongService(AppDbContext dbContext, IMapper mapper, IFileHandler fileHandler, IUserContext userContext)
     {
-        _uow = uow;
+        _dbContext = dbContext;
         _mapper = mapper;
         _fileHandler = fileHandler;
-        _songAuthorizationService = songAuthorizationService;
+        _userContext = userContext;
     }
 
-    public async Task<Result<SongResponse>> CreateSongAsync(CreateSongRequest model, string userId, CancellationToken cancellationToken = default)
+    public async Task<Result<SongResponse>> CreateSongAsync(CreateSongRequest model, CancellationToken cancellationToken = default)
     {
-        var exists = await _uow.ExistsAsync<Song>(s => s.Name.ToUpper() == model.Name.ToUpper(), cancellationToken);
+        var currentUser = _userContext.GetCurrentUser();
+
+        if (currentUser is null)
+        {
+            return new ValidationError("User doesn't exist");
+        }
+
+        var exists = await _dbContext.Songs.AnyAsync(s => s.Name.ToUpper() == model.Name.ToUpper(), cancellationToken);
 
         if (exists)
         {
             return new ValidationError($"Song with name {model.Name} already exists");
         }
 
-        var allExist = model.GenreIds.TrueForAll(id => _uow.Exists<Genre>(e => e.GenreId == id));
+        var allExist = model.GenreIds.TrueForAll(id => _dbContext.Genres.Any(e => e.GenreId == id));
 
         if (!allExist)
         {
@@ -42,59 +55,94 @@ internal class SongService : ISongService
         }
 
         var song = _mapper.Map<Song>(model);
-        _uow.SongRepository.AttachGenresToSong(song, model.GenreIds);
+        AttachGenresToSong(song, model.GenreIds);
 
         var songUrl = await _fileHandler.UploadFileAsync(model.SongFile, FileContainer.Songs, cancellationToken);
         song.Url = songUrl;
-        song.UserId = userId;
+        song.UserId = currentUser.UserId;
 
-        _uow.SongRepository.Create(song);
-        await _uow.SaveChangesAsync(cancellationToken);
+        _dbContext.Songs.Add(song);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
 
         return Result.Ok(_mapper.Map<SongResponse>(song));
     }
 
-    public async Task<Result<SongResponse>> GetSongAsync(int songId, string? userId, CancellationToken cancellationToken = default)
+    public async Task<Result<SongResponse>> GetSongAsync(int songId, CancellationToken cancellationToken = default)
     {
-        var song = await _uow.SongRepository.GetByIdAsync(songId, false, userId, cancellationToken);
+        var userId = _userContext.GetCurrentUser()?.UserId;
+
+        var song = await _dbContext.Songs
+            .AsNoTracking()
+            .Where(x => x.SongId == songId && (!x.IsPrivate || x.UserId == userId))
+            .ProjectTo<SongResponse>(_mapper.ConfigurationProvider)
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (song is null)
         {
             return new NotFoundError($"Song with id {songId} cannot be found");
         }
 
-        return Result.Ok(_mapper.Map<SongResponse>(song));
+        return Result.Ok(song);
     }
 
-    public async Task<List<SongResponse>> GetSongsAsync(CancellationToken cancellationToken = default)
+    public async Task<PagedList<SongResponse>> GetSongsAsync(SongsQueryRequest query, CancellationToken cancellationToken = default)
     {
-        var songs = await _uow.SongRepository.GetAllAsync(cancellationToken);
+        var userId = _userContext.GetCurrentUser()?.UserId;
 
-        return _mapper.Map<List<SongResponse>>(songs);  
+        var songsQuery = _dbContext.Songs
+            .AsNoTracking()
+            .Where(x => (!x.IsPrivate || x.UserId == userId));
+
+        if (!string.IsNullOrWhiteSpace(query.SearchTerm))
+        {
+            songsQuery = songsQuery.Where(x =>
+                x.Name.ToLower().Contains(query.SearchTerm.ToLower()) ||
+                x.User.DisplayName.ToLower().Contains(query.SearchTerm.ToLower()) ||
+                x.Genres.Any(x => x.NormalizedName.Contains(query.SearchTerm.ToUpper())));
+        }
+
+        if (query.SortOrder == "desc")
+        {
+            songsQuery = songsQuery.OrderByDescending(GetSortProperty(query));
+        }
+        else
+        {
+            songsQuery = songsQuery.OrderBy(GetSortProperty(query));
+        }
+
+        return await PagedList<SongResponse>.CreateAsync(songsQuery.ProjectTo<SongResponse>(_mapper.ConfigurationProvider), query.Page, query.PageSize);
     }
 
     public async Task<Result<SongResponse>> UpdateSongAsync(UpdateSongRequest model, CancellationToken cancellationToken = default)
     {
-        var song = await _uow.SongRepository.GetByIdAsync(model.SongId, cancellationToken: cancellationToken);
+        var currentUser = _userContext.GetCurrentUser();
+
+        if (currentUser is null)
+        {
+            return new ValidationError("User doesn't exist");
+        }
+
+        var song = await GetByIdAsync(model.SongId, currentUser.UserId, cancellationToken);
 
         if (song is null)
         {
             return new NotFoundError($"Song with id {model.SongId} cannot be found");
         }
 
-        if (!_songAuthorizationService.Authorize(song, OperationType.Update))
+        if (song.UserId != currentUser.UserId)
         {
             return new ForbiddenAccessError();
         }
 
-        var nameExists = await _uow.ExistsAsync<Song>(x => x.Name.ToUpper() == model.Name.ToUpper() && x.SongId != model.SongId, cancellationToken);
+        var nameExists = await _dbContext.Songs.AnyAsync(x => x.Name.ToUpper() == model.Name.ToUpper() && x.SongId != model.SongId, cancellationToken);
 
         if (nameExists)
         {
             return new NotFoundError($"Song with name {model.Name} already exists");
         }
 
-        var allExist = model.GenreIds.TrueForAll(id => _uow.Exists<Genre>(e => e.GenreId == id));
+        var allExist = model.GenreIds.TrueForAll(id => _dbContext.Genres.Any(e => e.GenreId == id));
 
         if (!allExist)
         {
@@ -103,52 +151,65 @@ internal class SongService : ISongService
 
         _mapper.Map(model, song);
 
-        _uow.SongRepository.AttachGenresToSong(song, model.GenreIds);
-        _uow.SongRepository.Update(song);
+        AttachGenresToSong(song, model.GenreIds);
 
-        await _uow.SaveChangesAsync();
+        await _dbContext.SaveChangesAsync();
 
         return Result.Ok(_mapper.Map<SongResponse>(song));
     }
 
     public async Task<Result> DeleteSongAsync(int songId, CancellationToken cancellationToken = default)
     {
-        var song = await _uow.SongRepository.GetByIdAsync(songId, false, cancellationToken: cancellationToken);
+        var currentUser = _userContext.GetCurrentUser();
+
+        if (currentUser is null)
+        {
+            return new ValidationError("User doesn't exist");
+        }
+
+        var song = await GetByIdAsync(songId, currentUser.UserId, cancellationToken);
 
         if (song is null)
         {
             return new NotFoundError($"Song with id {songId} cannot be found");
         }
 
-        if (!_songAuthorizationService.Authorize(song, OperationType.Delete))
+        if (song.UserId != currentUser.UserId)
         {
             return new ForbiddenAccessError();
         }
 
-        await _uow.SongRepository.DeleteAsync(songId, cancellationToken);
+        _dbContext.Songs.Remove(song);
         var fileName = Path.GetFileName(song.Url);
 
         await _fileHandler.DeleteFileAsync(fileName, FileContainer.Songs, cancellationToken);
-        await _uow.SaveChangesAsync(cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
 
         return Result.Ok();
     }
 
     public async Task<Result<SongResponse>> UploadPhotoAsync(int songId, IFormFile photo, CancellationToken cancellationToken = default)
     {
-        var song = await _uow.SongRepository.GetByIdAsync(songId, cancellationToken: cancellationToken);
+        var currentUser = _userContext.GetCurrentUser();
+
+        if (currentUser is null)
+        {
+            return new ValidationError("User doesn't exist");
+        }
+
+        var song = await GetByIdAsync(songId, currentUser.UserId, cancellationToken);
 
         if (song is null)
         {
             return new NotFoundError($"Song with id {songId} cannot be found");
         }
 
-        if (!_songAuthorizationService.Authorize(song, OperationType.Patch))
+        if (song.UserId != currentUser.UserId)
         {
             return new ForbiddenAccessError();
         }
 
-        var photoUrl = song.Photo is null 
+        var photoUrl = song.Photo is null
             ? await _fileHandler.UploadFileAsync(photo, FileContainer.Photos, cancellationToken)
             : await _fileHandler.UpdateFileAsync(Path.GetFileName(song.Photo.URL), photo, FileContainer.Photos, cancellationToken);
 
@@ -160,21 +221,29 @@ internal class SongService : ISongService
         };
 
         song.Photo = songPhoto;
-        await _uow.SaveChangesAsync();
+
+        await _dbContext.SaveChangesAsync();
 
         return Result.Ok(_mapper.Map<SongResponse>(song));
     }
 
     public async Task<Result> DeletePhotoAsync(int songId, CancellationToken cancellationToken = default)
     {
-        var song = await _uow.SongRepository.GetByIdAsync(songId, cancellationToken: cancellationToken);
+        var currentUser = _userContext.GetCurrentUser();
+
+        if (currentUser is null)
+        {
+            return new ValidationError("User doesn't exist");
+        }
+
+        var song = await GetByIdAsync(songId, currentUser.UserId, cancellationToken);
 
         if (song is null)
         {
             return new NotFoundError($"Song with id {songId} cannot be found");
         }
 
-        if (!_songAuthorizationService.Authorize(song, OperationType.Delete))
+        if (song.UserId != currentUser.UserId)
         {
             return new ForbiddenAccessError();
         }
@@ -187,14 +256,56 @@ internal class SongService : ISongService
         var fileName = Path.GetFileName(song.Photo.URL);
         await _fileHandler.DeleteFileAsync(fileName, FileContainer.Photos, cancellationToken);
 
-        await _uow.PhotoRepository.DeleteAsync(song.Photo.PhotoId);
-        await _uow.SaveChangesAsync();
+        var photo = await _dbContext.Photos.FindAsync(song.Photo.PhotoId, cancellationToken);
+
+        if (photo is null)
+        {
+            return new NotFoundError($"Photo for playlist {song.Name} cannot be found");
+        }
+
+        _dbContext.Remove(photo);
+
+        await _dbContext.SaveChangesAsync();
 
         return Result.Ok();
     }
 
     public async Task<bool> IsSongNameAvailableAsync(string name, CancellationToken cancellationToken = default)
     {
-        return await _uow.ExistsAsync<Song>(s => s.Name.ToUpper() == name.ToUpper(), cancellationToken);
+        return await _dbContext.Songs.AnyAsync<Song>(s => s.Name.ToUpper() == name.ToUpper(), cancellationToken);
     }
+
+    private async Task<Song?> GetByIdAsync(int songId, string? userId, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Songs
+            .Where(x => x.SongId == songId && (!x.IsPrivate || x.UserId == userId))
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    private void AttachGenresToSong(Song song, List<int> genreIds)
+    {
+        song.Genres.RemoveAll(x => !genreIds.Contains(x.GenreId));
+
+        foreach (var id in genreIds)
+        {
+            var genre = song.Genres.Find(x => x.GenreId == id);
+            if (genre is null)
+            {
+                genre = new Genre() { GenreId = id };
+                _dbContext.Attach(genre);
+                song.Genres.Add(genre);
+            }
+        }
+    }
+
+    private static Expression<Func<Song, object>> GetSortProperty(SongsQueryRequest query) =>
+        query.SortColumn.ToLower() switch
+        {
+            "name" => song => song.Name,
+            "likes" => song => song.LikesCount,
+            "duration" => song => song.Duration,
+            "releaseDate" => song => song.ReleaseDate,
+            "createdDate" => song => song.CreatedAt,
+            _ => song => song.SongId
+        };
 }

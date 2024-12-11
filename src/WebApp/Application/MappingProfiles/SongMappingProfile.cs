@@ -1,4 +1,4 @@
-﻿using Application.DTO.Songs;
+﻿using Application.Models.Songs;
 using AutoMapper;
 using Domain.Entities;
 
@@ -9,6 +9,7 @@ internal class SongMappingProfile : Profile
     {
         CreateMap<Song, SongResponse>()
             .ForMember(dest => dest.Artist, opt => opt.MapFrom(src => src.User))
+            .ForMember(dest => dest.Genres, opt => opt.MapFrom(src => src.Genres))
             .ForMember(dest => dest.PhotoUrl, opt => opt.MapFrom(src => src.Photo != null ? src.Photo.URL : ""));
 
         CreateMap<CreateSongRequest, Song>()

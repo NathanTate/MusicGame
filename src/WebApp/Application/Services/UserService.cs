@@ -1,24 +1,25 @@
-﻿using Application.DTO.Users;
+﻿using Application.Models.Users;
 using Application.Errors;
-using Application.InfrastructureInterfaces;
 using Application.Interfaces;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Enums;
 using FluentResults;
 using Microsoft.AspNetCore.Identity;
+using Domain.Interfaces;
+using Infrastructure.Context;
 
 namespace Application.Services;
 
 internal class UserService : IUserService
 {
+    private readonly AppDbContext _dbContext;
     private readonly IMapper _mapper;
-    private readonly IUnitOfWork _uow;
     private readonly IFileHandler _fileHandler;
     private readonly UserManager<User> _userManager;
-    public UserService(IUnitOfWork uow, IMapper mapper, IFileHandler fileHandler, UserManager<User> userManager)
+    public UserService(AppDbContext dbContext, IMapper mapper, IFileHandler fileHandler, UserManager<User> userManager)
     {
-        _uow = uow;
+        _dbContext = dbContext;
         _mapper = mapper;
         _fileHandler = fileHandler;
         _userManager = userManager;
@@ -63,7 +64,7 @@ internal class UserService : IUserService
             };
 
             user.Photo = userPhoto;
-            await _uow.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync();
         }
 
         return Result.Ok(_mapper.Map<UserResponse>(user));

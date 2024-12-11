@@ -1,5 +1,5 @@
 ﻿using Application.Common.Helpers;
-using Application.DTO.Genres;
+using Application.Models.Genres;
 using Application.Interfaces;
 using Domain.Enums;
 using FluentResults;
@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Presentation.Extensions;
+using Application.Models.Queries;
 
 namespace Presentation.Controllers;
 
@@ -35,11 +36,9 @@ public class GenreController : BaseApiController
 
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> GetGenres()
+    public async Task<IActionResult> GetGenres([FromQuery] GenresQueryRequest query)
     {
-        List<GenreResponse> genres = await _genreService.GetGenresAsync(HttpContext.RequestAborted);
-
-        return Ok(genres);
+        return Ok(await _genreService.GetGenresAsync(query, HttpContext.RequestAborted));
     }
 
     [HttpGet("{genreId}")]

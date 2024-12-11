@@ -1,4 +1,4 @@
-﻿using Application.DTO.Users;
+﻿using Application.Models.Users;
 using Domain.Entities;
 using FluentResults;
 
@@ -11,6 +11,6 @@ public interface IAuthenticationService
     public Task<Result> ResendConfirmationEmailAsync(string Email, CancellationToken cancellationToken = default);
     public Task<Result> ResetPasswordAsync(ResetPasswordRequest model, CancellationToken cancellationToken = default);
     public Task<Result> SendResetPasswordCodeAsync(string Email, CancellationToken cancellationToken = default);
-    public Task<Result<TokenDto>> CreateTokenAsync(User user, bool populateExp = true, CancellationToken cancellationToken = default);
-    public Task<Result<TokenDto>> RefreshTokenAsync(TokenDto model, CancellationToken cancellationToken = default);
+    public Task<Result<TokenWrapper>> CreateTokenAsync(User user, bool populateExp = true, CancellationToken cancellationToken = default);
+    public Task<Result<TokenWrapper>> RefreshTokenAsync(TokenDto model, CancellationToken cancellationToken = default);
 }

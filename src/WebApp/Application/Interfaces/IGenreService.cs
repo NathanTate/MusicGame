@@ -1,10 +1,12 @@
-﻿using Application.DTO.Genres;
+﻿using Application.Models;
+using Application.Models.Genres;
+using Application.Models.Queries;
 using FluentResults;
 
 namespace Application.Interfaces;
 public interface IGenreService
 {
-    Task<List<GenreResponse>> GetGenresAsync(CancellationToken cancellationToken = default);
+    Task<PagedList<GenreResponse>> GetGenresAsync(GenresQueryRequest query, CancellationToken cancellationToken = default);
     Task<Result<GenreResponse>> GetGenreAsync(int genreId, CancellationToken cancellationToken = default);
     Task<Result<GenreResponse>> CreateGenreAsync(CreateGenreRequest model, CancellationToken cancellationToken = default);
     Task<Result<GenreResponse>> UpdateGenreAsync(UpdateGenreRequest model, CancellationToken cancellationToken = default);

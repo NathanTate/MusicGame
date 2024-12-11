@@ -1,4 +1,4 @@
-﻿using Application.DTO.Users;
+﻿using Application.Models.Users;
 using FluentResults;
 
 namespace Application.Interfaces;

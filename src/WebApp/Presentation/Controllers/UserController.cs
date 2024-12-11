@@ -1,4 +1,4 @@
-﻿using Application.DTO.Users;
+﻿using Application.Models.Users;
 using AutoMapper;
 using Domain.Entities;
 using Microsoft.AspNetCore.Authorization;

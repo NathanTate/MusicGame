@@ -5,11 +5,10 @@ using Domain.Entities;
 using Infrastructure.Interceptors;
 using Infrastructure.Context;
 using Infrastructure.ExternalProviders;
-using Application.InfrastructureInterfaces;
 using Microsoft.AspNetCore.Identity;
 using Domain.Primitives;
-using Infrastructure.Repositories;
 using Azure.Storage.Blobs;
+using Domain.Interfaces;
 
 namespace Infrastructure;
 public static class InfrastructureServiceCollectionExtensions
@@ -60,7 +59,6 @@ public static class InfrastructureServiceCollectionExtensions
 
         services.AddSingleton<IEmailSender, EmailSender>();
         services.AddSingleton<IFileHandler, FileHandler>();
-        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;
     }

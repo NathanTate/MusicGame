@@ -1,9 +1,9 @@
 ﻿using Application.Common.Helpers;
-using Application.DTO.Users;
+using Application.Models.Users;
 using Application.Errors;
-using Application.InfrastructureInterfaces;
 using Domain.Entities;
 using Domain.Enums;
+using Domain.Interfaces;
 using Domain.Primitives;
 using FluentResults;
 using Microsoft.AspNetCore.Identity;
@@ -14,6 +14,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Services.Auth;
 internal class AuthenticationService : IAuthenticationService
@@ -75,7 +76,7 @@ internal class AuthenticationService : IAuthenticationService
             return new ValidationError("Invalid Email or Password");
         }    
         
-        Result<TokenDto> result = await CreateTokenAsync(user, populateExp: true, cancellationToken);
+        Result<TokenWrapper> result = await CreateTokenAsync(user, populateExp: true, cancellationToken);
 
         if (result.IsFailed)
         {
@@ -87,11 +88,11 @@ internal class AuthenticationService : IAuthenticationService
         return loginResponse;
     }
 
-    public async Task<Result<TokenDto>> CreateTokenAsync(User user, bool populateExp = true, CancellationToken cancellationToken = default)
+    public async Task<Result<TokenWrapper>> CreateTokenAsync(User user, bool populateExp = true, CancellationToken cancellationToken = default)
     {
         user.Roles = [.. (await _userManager.GetRolesAsync(user))];
 
-        TokenBase accessToken = GenerateToken(user);
+        TokenDto accessToken = GenerateToken(user);
         string refreshTokenString = GenerateRefreshToken();
         var refreshTokenExpiresAt = populateExp 
             ? DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpiresInDays) 
@@ -108,25 +109,24 @@ internal class AuthenticationService : IAuthenticationService
             return ResultHelper.ErrorsToResult(result.Errors);
         }
 
-        var refreshToken = new TokenBase(refreshTokenString, refreshTokenExpiresAt);
+        var refreshToken = new TokenDto(refreshTokenString, refreshTokenExpiresAt);
 
-        return new TokenDto(accessToken, refreshToken);
+        return new TokenWrapper(accessToken, refreshToken);
     }
 
-    public async Task<Result<TokenDto>> RefreshTokenAsync(TokenDto model, CancellationToken cancellationToken = default)
+    public async Task<Result<TokenWrapper>> RefreshTokenAsync(TokenDto refreshToken, CancellationToken cancellationToken = default)
     {
-        TokenBase accessToken = model.AccessToken;
-        TokenBase refreshToken = model.RefreshToken;
+        //Result<ClaimsIdentity> result = await GetIdentityFromExpiredTokenAsync(accessToken.Token);
 
-        Result<ClaimsIdentity> result = await GetIdentityFromExpiredTokenAsync(accessToken.Token);
+        //if (result.IsFailed)
+        //{
+        //    return ResultHelper.ErrorsToResult(result.Errors);
+        //}
 
-        if (result.IsFailed)
-        {
-            return ResultHelper.ErrorsToResult(result.Errors);
-        }
+        //var claimsIdentity = result.Value;
+        //var user = await _userManager.GetUserAsync(new ClaimsPrincipal(claimsIdentity));
 
-        var claimsIdentity = result.Value;
-        var user = await _userManager.GetUserAsync(new ClaimsPrincipal(claimsIdentity));
+        var user = await _userManager.Users.FirstOrDefaultAsync(x => x.RefreshToken == refreshToken.Token);
 
         if (isRefreshTokenInvalid())
         {
@@ -139,37 +139,37 @@ internal class AuthenticationService : IAuthenticationService
             || user.RefreshTokenExpiryTime < DateTime.UtcNow;
     }
 
-    public async Task<Result<ClaimsIdentity>> GetIdentityFromExpiredTokenAsync(string accessToken, CancellationToken cancellationToken = default)
-    {
-        var tokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuerSigningKey = true,
-            ValidateLifetime = false,
-            ValidateIssuer = false,
-            ValidateAudience = false,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.SecurityKey)),
-            ClockSkew = TimeSpan.FromSeconds(30)
-        };
+    //public async Task<Result<ClaimsIdentity>> GetIdentityFromExpiredTokenAsync(string accessToken, CancellationToken cancellationToken = default)
+    //{
+    //    var tokenValidationParameters = new TokenValidationParameters
+    //    {
+    //        ValidateIssuerSigningKey = true,
+    //        ValidateLifetime = false,
+    //        ValidateIssuer = false,
+    //        ValidateAudience = false,
+    //        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.SecurityKey)),
+    //        ClockSkew = TimeSpan.FromSeconds(30)
+    //    };
 
-        var tokenHanlder = new JwtSecurityTokenHandler();
+    //    var tokenHanlder = new JwtSecurityTokenHandler();
 
-        TokenValidationResult validationResult = await tokenHanlder.ValidateTokenAsync(accessToken, tokenValidationParameters);
+    //    TokenValidationResult validationResult = await tokenHanlder.ValidateTokenAsync(accessToken, tokenValidationParameters);
 
-        if (!validationResult.IsValid)
-        {
-            return new ValidationError("Invalid Token");
-        }
+    //    if (!validationResult.IsValid)
+    //    {
+    //        return new ValidationError("Invalid Token");
+    //    }
 
-        var jwtSecurityToken = validationResult.SecurityToken as JwtSecurityToken;
+    //    var jwtSecurityToken = validationResult.SecurityToken as JwtSecurityToken;
 
-        if (jwtSecurityToken is null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha512, StringComparison.InvariantCultureIgnoreCase))
-        {
-            return new ValidationError("Invalid Token");
-        }
+    //    if (jwtSecurityToken is null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha512, StringComparison.InvariantCultureIgnoreCase))
+    //    {
+    //        return new ValidationError("Invalid Token");
+    //    }
 
-        return validationResult.ClaimsIdentity;
+    //    return validationResult.ClaimsIdentity;
 
-    }
+    //}
 
     public async Task<Result> ConfirmEmailAsync(ConfirmEmailRequest model, CancellationToken cancellationToken = default)
     {
@@ -248,7 +248,7 @@ internal class AuthenticationService : IAuthenticationService
         return Result.Ok();
     }
 
-    private TokenBase GenerateToken(User user)
+    private TokenDto GenerateToken(User user)
     {
         var _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.SecurityKey));
 
@@ -274,7 +274,7 @@ internal class AuthenticationService : IAuthenticationService
 
         SecurityToken token = tokenHandler.CreateToken(serucityTokenDescriptor);
 
-        TokenBase accessToken = new TokenBase(tokenHandler.WriteToken(token), ExpiresAt);
+        TokenDto accessToken = new TokenDto(tokenHandler.WriteToken(token), ExpiresAt);
 
         return accessToken;
     }
