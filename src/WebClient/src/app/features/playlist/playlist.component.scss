@@ -3,6 +3,7 @@
 .layout {
   --header-opacity: 0;
   --header-content-opacity: 0;
+  --background-color: 60, 60, 60;
   height: 100%;
   width: 100%;
   border-radius: $global-border-radius;
@@ -16,7 +17,7 @@
     padding-block: 8px;
     width: calc(100% - $scrollbar-width);
     border-radius: $global-border-radius $global-border-radius 0 0;
-    background-color: rgba(60, 60, 60, var(--header-opacity));
+    background-color: rgba(var(--background-color), var(--header-opacity));
     z-index: 100;
     transition: background-color 300ms ease-out;
 
@@ -50,6 +51,7 @@
     position: relative;
     min-height: min(20vw, 260px);
     background: linear-gradient(transparent 0, rgba(0, 0, 0, 0.5) 100%);
+    background-color: rgba(var(--background-color));
 
     .image-wrapper {
       $size: clamp(96px, 15vw, 232px);
@@ -72,6 +74,7 @@
       height: clamp(128px, 12vw, 252px);
       z-index: -1;
       background: linear-gradient(rgba(0, 0, 0, .6) 0, var(--surface-card) 100%);
+      background-color: rgb(var(--background-color));
     }
 
     .bg-transparent {
@@ -120,20 +123,5 @@
         border-bottom-right-radius: $global-border-radius;
       }
     }
-  }
-}
-
-.play-button {
-  --size: 48px;
-
-  background-color: var(--primary-color);
-  width: var(--size);
-  height: var(--size);
-  border: none;
-  border-radius: 50%;
-
-  &:hover {
-    scale: 1.1;
-    background: color-mix(in srgb, var(--primary-color) 90%, transparent);
   }
 }

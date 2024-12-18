@@ -1,0 +1,43 @@
+@import '../../../../_variables.scss';
+
+.image-preview {
+  position: relative;
+  background-color: var(--surface-100);
+  width: 100%;
+  height: 100%;
+  border-radius: $global-border-radius;
+
+  &:hover {
+    .menu-button {
+      opacity: 1;
+    }
+  }
+
+  img,
+  .image-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    border-radius: inherit;
+  }
+
+  .menu-wrapper {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+  }
+
+  .menu-button {
+    cursor: pointer;
+    opacity: 0;
+    border: none;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.5);
+    width: 32px;
+    height: 32px;
+    transition: opacity 150ms ease-in-out;
+  }
+}

@@ -153,3 +153,19 @@ ol {
 .p-data-table>tr>th {
   background: transparent;
 }
+
+.play-button {
+  --size: 48px;
+
+  background-color: var(--primary-color);
+  width: var(--size);
+  height: var(--size);
+  border: none;
+  border-radius: 50%;
+
+  &:hover {
+    cursor: pointer;
+    scale: 1.05;
+    background: color-mix(in srgb, var(--primary-color) 95%, transparent);
+  }
+}

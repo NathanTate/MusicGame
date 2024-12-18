@@ -4,12 +4,12 @@
     <div class="left">
       <div #songInfo class="left-content">
         <div class="image-wrapper">
-          <img [src]="state.song?.photoUrl" alt="">
+          <img [src]="playbackState()?.song?.photoUrl" alt="">
         </div>
         <div>
           <div class="flex gap-2 flex-column">
-            <span class="font-medium"><a routerLink="/">{{state.song?.name}}</a></span>
-            <span class="text-sm"><a style="--text-color: var(--surface-500)" routerLink="/">{{state.song?.artist?.displayName}}</a></span>
+            <span class="font-medium"><a routerLink="/">{{playbackState()?.song?.name}}</a></span>
+            <span class="text-sm"><a style="--text-color: var(--surface-500)" routerLink="/">{{playbackState()?.song?.artist?.displayName}}</a></span>
           </div>
           <p-contextMenu [target]="songInfo" [model]="items()" appendTo="body"></p-contextMenu>
         </div>
@@ -51,20 +51,23 @@
       </div>
       <div class="playbar flex gap-2 align-items-center">
         <div>
-          <span class="text-xs">{{state.redableCurrentTime}}</span>
+          <span class="text-xs select-none pointer-events-none">{{state.redableCurrentTime}}</span>
         </div>
         <div class="flex-1">
           <app-draggable-bar [maxValue]="state.duration" [value]="state.currentTime" (valueChanged)="onPlayingBarValueChange($event)"></app-draggable-bar>
         </div>
         <div>
-          <span class="text-xs">{{state.readableDuration}}</span>
+          <span class="text-xs select-none pointer-events-none">{{state.readableDuration}}</span>
         </div>
       </div>
     </div>
     <div class="right">
       <div class="right-content">
-        <div>
-          <p-button [text]="true" icon="pi pi-volume-up"></p-button>
+        <div class="volume-wrapper">
+          <p-button (onClick)="toggleMute()" [text]="true" [icon]="state.muted ? 'pi pi-volume-off' : state.volume <= 50 ? 'pi pi-volume-down' : 'pi pi pi-volume-up'"></p-button>
+          <div class="flex-1">
+            <app-draggable-bar [maxValue]="100" [live]="true" [value]="state.volume" (valueChanged)="onVolumeValueChange($event)"></app-draggable-bar>
+          </div>
         </div>
       </div>
     </div>

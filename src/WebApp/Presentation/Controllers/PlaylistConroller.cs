@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Presentation.Extensions;
 using Application.Models.Queries;
+using Application.Models;
 
 namespace Presentation.Controllers;
 
@@ -128,9 +129,9 @@ public class PlaylistConroller : BaseApiController
         return result.ToHttpResponse(HttpContext);
     }
 
-    [HttpGet("nameAvailable")]
-    public async Task<IActionResult> IsPlaylistNameAvailable(string name)
+    [HttpPost("nameAvailable")]
+    public async Task<IActionResult> IsPlaylistNameAvailable(NameRequest model)
     {
-        return Ok(await _playlistService.IsPlaylistNameAvailable(name, HttpContext.RequestAborted));
+        return Ok(await _playlistService.IsPlaylistNameAvailable(model.name, HttpContext.RequestAborted));
     }
 }

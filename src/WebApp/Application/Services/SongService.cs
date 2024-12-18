@@ -123,7 +123,10 @@ internal class SongService : ISongService
             return new ValidationError("User doesn't exist");
         }
 
-        var song = await GetByIdAsync(model.SongId, currentUser.UserId, cancellationToken);
+        var song = await _dbContext.Songs
+            .Include(x => x.Genres)
+            .Where(x => x.SongId == model.SongId && (!x.IsPrivate || x.UserId == currentUser.UserId))
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (song is null)
         {
@@ -272,7 +275,8 @@ internal class SongService : ISongService
 
     public async Task<bool> IsSongNameAvailableAsync(string name, CancellationToken cancellationToken = default)
     {
-        return await _dbContext.Songs.AnyAsync<Song>(s => s.Name.ToUpper() == name.ToUpper(), cancellationToken);
+        var exists = await _dbContext.Songs.AnyAsync(p => p.Name.ToUpper() == name.ToUpper(), cancellationToken);
+        return !exists;
     }
 
     private async Task<Song?> GetByIdAsync(int songId, string? userId, CancellationToken cancellationToken = default)
@@ -299,7 +303,7 @@ internal class SongService : ISongService
     }
 
     private static Expression<Func<Song, object>> GetSortProperty(SongsQueryRequest query) =>
-        query.SortColumn.ToLower() switch
+        query.SortColumn?.ToLower() switch
         {
             "name" => song => song.Name,
             "likes" => song => song.LikesCount,

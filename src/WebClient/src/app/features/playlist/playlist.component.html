@@ -1,23 +1,33 @@
 @let playlist = playlistSignal();
 
-<div class="layout">
+<div class="layout" [style]="'--background-color:' + randomColor()">
   <div *ngIf="state$ | async as state" class="h-full scrollable scrollbar-horizontal" (scroll)="onScroll($event)">
     @if (playlist) {
       <header class="main-header">
         <div class="content h-full flex gap-2 align-items-center px-4">
-          <button class="play-button" (click)="onPlaylistPlay()">
-            <span class="icon-wrapper">
-              <svg data-encore-id="icon" role="img" aria-hidden="true" viewBox="0 0 24 24" class="Svg-sc-ytk21e-0 bneLcE">
-                <path fill="#000" d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606z">
-                </path>
-              </svg>
-            </span>
-          </button>
+          @if (state.playing && playbackState()?.playlistId === playlist.playlistId) {
+            <button class="play-button" (click)="onPause()">
+              <span class="icon-wrapper">
+                <svg data-encore-id="icon" role="img" aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M5.7 3a.7.7 0 0 0-.7.7v16.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V3.7a.7.7 0 0 0-.7-.7H5.7zm10 0a.7.7 0 0 0-.7.7v16.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V3.7a.7.7 0 0 0-.7-.7h-2.6z"></path>
+                </svg>
+              </span>
+            </button>
+          } @else {
+            <button class="play-button" (click)="onPlaylistPlay()">
+              <span class="icon-wrapper">
+                <svg data-encore-id="icon" role="img" aria-hidden="true" viewBox="0 0 24 24">
+                  <path fill="#000" d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606z">
+                  </path>
+                </svg>
+              </span>
+            </button>
+          } 
           <h2 class="my-0 text-xl">{{playlist.name}}</h2>
         </div>
       </header>
       <section class="content-layout">
-        <section [style]="'background-color:' + randomColor()" #contentHeader class="header">
+        <section #contentHeader class="header">
           <div class="content flex gap-4 align-items-end h-full px-4 py-3 lg:pb-4">
             <div class="image-wrapper">
               <img src="https://i.scdn.co/image/ab67616d00001e025d0e60fddfd1de9517829de0" alt="playlist image">
@@ -41,7 +51,7 @@
         <section class="playlist-content">
           <div [style]="'background-color:' + randomColor()" class="background-overlay"></div>
           <div class="flex justify-content-between px-4 py-3 lg:py-4">
-            @if (state.playing) {
+            @if (state.playing && playbackState()?.playlistId === playlist.playlistId) {
               <button class="play-button text-black-alpha-90" (click)="onPause()">
                 <span class="icon-wrapper">
                   <svg data-encore-id="icon" role="img" aria-hidden="true" viewBox="0 0 24 24">
@@ -103,13 +113,13 @@
                 <div class="p-2"></div>
               </ng-template>
               <ng-template pTemplate="body" let-plSong>
-                <tr class="bg-transparent x-border-none br-global cursor-pointer hover:surface-hover text-sm" (dblclick)="setSong(plSong.song)">
+                <tr class="bg-transparent x-border-none br-global cursor-pointer hover:surface-hover focus:surface-300 text-sm" (dblclick)="setSong(plSong.song)">
                   <td class="relative pl-4 w-3rem">
-                    @if (state.playing && state.song?.songId === plSong.song.songId) {
+                    @if (state.playing && this.playbackState()?.song?.songId === plSong.song.songId && this.playbackState()?.playlistId === playlist.playlistId) {
                       <p-button (onClick)="onPause()" icon="pi pi-pause" [text]="true" size="small" styleClass="p-0 w-auto" class="play-pause-button"></p-button>
                       <img width="14" height="14" class="hover:hidden" src="https://open.spotifycdn.com/cdn/images/equaliser-animated-green.f5eb96f2.gif"/>
                     } @else {
-                      <span class="text-base" [class.text-primary]="plSong.song.songId === currentSong()?.songId">{{ plSong.position }}</span>
+                      <span class="text-base" [class.text-primary]="plSong.song.songId === this.playbackState()?.song?.songId && this.playbackState()?.playlistId === playlist.playlistId">{{ plSong.position }}</span>
                       <p-button (onClick)="onPlay(plSong.song)" [text]="true" styleClass="p-0" class="play-pause-button">
                         <span class="icon-wrapper" style="--size: 16px">
                           <svg data-encore-id="icon" role="img" aria-hidden="true" viewBox="0 0 24 24">
@@ -127,7 +137,7 @@
                         }
                       </div>
                       <div class="flex flex-column justify-content-center">
-                        <span class="font-semibold text-base" [class.text-primary]="plSong.song.songId === currentSong()?.songId">{{ plSong.song.name }}</span>
+                        <span class="font-semibold text-base" [class.text-primary]="plSong.song.songId === this.playbackState()?.song?.songId && this.playbackState()?.playlistId === playlist.playlistId">{{ plSong.song.name }}</span>
                         <span class="font-medium text-gray-200">{{ plSong.song.artist.displayName }}</span>
                       </div>
                     </div>
@@ -149,7 +159,7 @@
                 </tr>
               </ng-template>
                 <ng-template pTemplate="emptymessage">
-                  @if (playlist.user.email === authService.authData()?.email) {
+                  @if (playlist.user.userId === authService.authData()?.userId) {
                   <tr class="bg-transparent x-border-none">
                     <td colspan="7">
                       <div class="flex flex-column gap-3">

@@ -11,4 +11,5 @@ public interface IGenreService
     Task<Result<GenreResponse>> CreateGenreAsync(CreateGenreRequest model, CancellationToken cancellationToken = default);
     Task<Result<GenreResponse>> UpdateGenreAsync(UpdateGenreRequest model, CancellationToken cancellationToken = default);
     Task<Result> DeleteGenreAsync(int genreId, CancellationToken cancellationToken = default);
+    Task<bool> IsGenreNameAvailable(string name, CancellationToken cancellationToken = default);
 }

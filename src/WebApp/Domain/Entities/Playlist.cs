@@ -8,7 +8,6 @@ public class Playlist : ISoftDeletable
     public string? Description { get; set; }
     public bool IsPrivate { get; set; } = false;
     public int TotalDuration { get; set; }
-    public int SongsCount { get; set; } = default;
     public int LikesCount { get; set; } = default;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public bool isDeleted { get; set; }

@@ -1,4 +1,4 @@
-import { TokenDto } from "./tokenDto";
+import { TokenWrapper } from "./tokenDto";
 
 export interface AuthData {
   userId: string;
@@ -6,5 +6,5 @@ export interface AuthData {
   username: string;
   roles: string[];
   profilePhotoUrl?: string;
-  tokens: TokenDto;
+  tokens: TokenWrapper;
 }

@@ -5,5 +5,7 @@ import { PlaylistResponse } from '../models/playlist/playlistResponse';
 
 
 export const playlistsResolver: ResolveFn<PlaylistResponse[]> = (route, state) => {
-  return inject(PlaylistService).getPlaylists();
+  const playlistService = inject(PlaylistService)
+
+  return playlistService.getPlaylists(playlistService.playlistsQuery);
 };

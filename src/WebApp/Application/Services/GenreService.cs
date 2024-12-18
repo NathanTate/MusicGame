@@ -102,7 +102,13 @@ internal class GenreService : IGenreService
         _dbContext.Remove(genre);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-        
+
         return Result.Ok();
+    }
+
+    public async Task<bool> IsGenreNameAvailable(string name, CancellationToken cancellationToken = default)
+    {
+        var exists = await _dbContext.Genres.AnyAsync(p => p.Name.ToUpper() == name.ToUpper(), cancellationToken);
+        return !exists;
     }
 }

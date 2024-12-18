@@ -53,12 +53,12 @@
       </ul>
     }
     <ul role-list class="list-none">
-      @for (item of playlists(); track item.playlistId) {
+      @for (item of playlists()?.items; track item.playlistId) {
         <li pRipple (contextmenu)="onContextMenu($event, item)" routerLink="playlist/{{item.playlistId}}" routerLinkActive="active" class="playlist-item flex align-items-center gap-3">
           <div class="relative">
             <div class="playlist-image-wrapper">
               @if (item.photoUrl) {
-                <img src="https://misc.scdn.co/liked-songs/liked-songs-64.png" [alt]="item.name">
+                <img [src]="item.photoUrl" [alt]="item.name">
               } @else {
                 <div class="default-image">
                   <span class="icon-wrapper">
@@ -83,14 +83,14 @@
           </div>
           @if (expanded()) {
             <div class="playlist-text">
-              <p class="x-lines-limit">{{item.name}}</p>
+              <p class="x-lines-limit" [class.text-primary]="playbackState()?.playlist?.playlistId === item.playlistId">{{item.name}}</p>
               <span class="text-white-alpha-40 text-sm x-lines-limit">Playlist • {{item.user.displayName}}</span>
             </div>
           }
         </li>
       }
     </ul>
-    <p-contextMenu appendTo="body" [model]="contextItems()" (onHide)="onHide()"></p-contextMenu>
+    <p-contextMenu appendTo="body" [model]="contextItems()" (onHide)="onHide()" styleClass="text-sm w-auto"></p-contextMenu>
   </div>
 </aside>
 

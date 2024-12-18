@@ -1,10 +1,10 @@
-@let track = song();
+@let pl = playlist();
 
-<article [attr.aria-labelledby]="labelById()" class="x-card" [routerLink]="['/playlist', track.songId]">
+<article [attr.aria-labelledby]="labelById()" class="x-card" [routerLink]="['/playlist', pl.playlistId]">
   <div class="image-wrapper">
     <div class="image-preview">
-      @if (track.photoUrl) {
-        <img [src]="track.photoUrl" alt="song image">
+      @if (pl.photoUrl) {
+        <img [src]="pl.photoUrl" alt="song image">
       } @else {
         <div class="image-placeholder icon-wrapper" style="--size: 64px">
           <svg data-encore-id="icon" role="img" aria-hidden="true" data-testid="playlist" class="Svg-sc-ytk21e-0 bneLcE" viewBox="0 0 24 24">
@@ -23,13 +23,13 @@
       @if (showTitle()) {
         <p>
           <a [id]="labelById()" class="x-lines-limit link-ahead" style="--max-lines: 2" routerLink="/playlist/3">
-            {{track.name}}
+            {{pl.name}}
           </a>
         </p>
       }
       <p>
-        <a class="text-sm x-lines-limit link-ahead" style="--text-color: var(--surface-500)" [routerLink]="['/user', track.artist.email]">
-          {{track.artist.displayName}}
+        <a class="text-sm x-lines-limit link-ahead" style="--text-color: var(--surface-500)" [routerLink]="['/user', pl.user.email]">
+          {{pl.user.displayName}}
         </a>
       </p>
     </div>

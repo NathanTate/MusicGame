@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Presentation.Extensions;
 using Application.Models.Queries;
+using Application.Models;
 
 namespace Presentation.Controllers;
 
@@ -90,9 +91,9 @@ public class SongController : BaseApiController
         return result.ToHttpResponse(HttpContext);
     }
 
-    [HttpGet("nameAvailable")]
-    public async Task<IActionResult> IsSongNameAvailable(string name)
+    [HttpPost("nameAvailable")]
+    public async Task<IActionResult> IsSongNameAvailable(NameRequest model)
     {
-        return Ok(await _songService.IsSongNameAvailableAsync(name, HttpContext.RequestAborted));
+        return Ok(await _songService.IsSongNameAvailableAsync(model.name, HttpContext.RequestAborted));
     }
 }

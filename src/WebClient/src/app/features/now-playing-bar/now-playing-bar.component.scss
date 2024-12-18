@@ -122,6 +122,15 @@
     .right-content {
       display: flex;
       align-items: center;
+      justify-content: flex-end;
+      flex: 1;
+
+      .volume-wrapper {
+        display: flex;
+        align-items: center;
+        flex-basis: 100px;
+        flex-shrink: 0;
+      }
     }
   }
 

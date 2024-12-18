@@ -40,11 +40,6 @@ internal class PlaylistTypeConfig : IEntityTypeConfiguration<Playlist>
             .IsRequired(true);
 
         builder
-            .Property(b => b.SongsCount)
-            .HasDefaultValue(0)
-            .IsRequired(true);
-
-        builder
             .Property(b => b.UserId)
             .IsRequired(true);
 
@@ -76,7 +71,7 @@ internal class PlaylistTypeConfig : IEntityTypeConfiguration<Playlist>
                     .HasOne<Playlist>()
                     .WithMany()
                     .HasForeignKey("PlaylistId")
-                    
+
             );
 
     }

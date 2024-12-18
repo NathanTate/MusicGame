@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, HostListener, inject, OnInit, signal, viewChild } from '@angular/core';
+import { Component, DestroyRef, HostListener, inject, OnInit, signal, viewChild } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -11,8 +11,12 @@ import { ScrollPanelModule } from 'primeng/scrollpanel';
 import { OverflowScrollDirective } from '../../../shared/directives/overflow-scroll.directive';
 import { DialogModule } from 'primeng/dialog';
 import { PlaylistResponse } from '../../models/playlist/playlistResponse';
-import { PlaylistUpdateRequest } from '../../models/playlist/PlaylistUpdateRequest';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { PlaylistListResponse } from '../../models/playlist/playlistListResponse';
+import { EditPlaylistModalComponent } from '../../../shared/components/edit-playlist-modal/edit-playlist-modal.component';
+import { AuthService } from '../../../auth/auth.service';
+import { PlaybackState, PlaybackStateService } from '../../services/playbackState.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-sidenav',
@@ -24,25 +28,56 @@ import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
   providers: [DialogService]
 })
 export class SidenavComponent implements OnInit {
+  private playlistService = inject(PlaylistService)
+  private dialogService = inject(DialogService)
+  private router = inject(Router);
+  private authService = inject(AuthService);
+  private playbackStateService = inject(PlaybackStateService);
+  private destroyRef = inject(DestroyRef);
+
   cm = viewChild.required(ContextMenu);
   expanded = signal(window.innerWidth > 1024);
   items = signal<MenuItem[] | undefined>(undefined);
   contextItems = signal<MenuItem[] | undefined>(undefined);
-  playlists = signal<PlaylistResponse[]>([]);
+  playlists = signal<PlaylistListResponse | null>(null);
+  playbackState = signal<PlaybackState | undefined>(undefined);
   isLoading = signal(false);
   selectedPlaylist = signal<PlaylistResponse | null>(null);
   timeoutId: ReturnType<typeof setTimeout> | undefined;
-  visible = signal(false)
   ref: DynamicDialogRef | undefined;
-
-  private playlistService = inject(PlaylistService)
-  private dialogService = inject(DialogService)
-  private router = inject(Router);
-
 
   onContextMenu(event: MouseEvent, playlist: PlaylistResponse): void {
     this.selectedPlaylist.set(playlist);
+    this.contextItems.set(this.getMenuItemsForPlaylist(playlist));
     this.cm().show(event);
+  }
+
+  getMenuItemsForPlaylist(playlist: PlaylistResponse): MenuItem[] {
+    let menuItems: MenuItem[] | undefined;
+    if (playlist.user.email === this.authService.authData()?.email) {
+      menuItems = [
+        {
+          icon: 'pi pi-pencil',
+          label: 'Edit details',
+          command: () => this.openModal()
+        },
+        {
+          icon: 'pi pi-trash',
+          label: 'Delete',
+          command: () => this.deletePlaylist(this.selectedPlaylist()!.playlistId)
+        }
+      ]
+    } else {
+      menuItems = [
+        {
+          icon: 'pi pi-check-circle',
+          label: 'Remove from your Library',
+          command: () => console.log('removed')
+        }
+      ]
+    }
+
+    return menuItems;
   }
 
   onHide() {
@@ -58,37 +93,33 @@ export class SidenavComponent implements OnInit {
 
   ngOnInit(): void {
     this.getPlaylists();
+    this.playbackStateService.state$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((state) => {
+      this.playbackState.set(state);
+    })
     this.items.set([
       {
         label: 'Logout',
         command: () => this.createPlaylist()
       }
     ])
-    this.contextItems.set([
-      {
-        icon: 'pi pi-pencil',
-        label: 'Edit details',
-        command: () => this.openModal()
-      },
-      {
-        icon: 'pi pi-trash',
-        label: 'Delete',
-        command: () => this.deletePlaylist(this.selectedPlaylist()!.playlistId)
-      }
-    ])
   }
 
   openModal() {
-    this.visible.set(true);
+    this.ref = this.dialogService.open(EditPlaylistModalComponent, {
+      header: 'Edit details',
+      width: '524px',
+      modal: true,
+      breakpoints: {
+        '768px': '96vw',
+      },
+      data: {
+        playlist: this.selectedPlaylist()
+      },
+
+      // footer: '<p class="text-sm">By proceeding, you agree to give SoundCloud access to the image you choose to upload. Please make sure you have the right to upload the image<p>'
+    })
   }
 
-  updatePlaylist(playlist: PlaylistUpdateRequest) {
-    this.playlistService.updatePlaylist(playlist)
-  }
-
-  updatePhoto() {
-
-  }
 
   createPlaylist() {
     this.playlistService.createPlaylist().subscribe((playlist) => {
@@ -105,8 +136,7 @@ export class SidenavComponent implements OnInit {
 
   getPlaylists() {
     this.timeoutId = setTimeout(() => this.isLoading.set(true), 500)
-    this.isLoading.set(true);
-    this.playlistService.getPlaylists().subscribe({
+    this.playlistService.getPlaylists(this.playlistService.playlistsQuery).subscribe({
       next: (playlists) => {
         this.playlists.set(playlists);
         clearTimeout(this.timeoutId);

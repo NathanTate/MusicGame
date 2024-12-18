@@ -140,11 +140,6 @@ namespace Infrastructure.Migrations
                     b.Property<int?>("PhotoId")
                         .HasColumnType("int");
 
-                    b.Property<int>("SongsCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(0);
-
                     b.Property<int>("TotalDuration")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")

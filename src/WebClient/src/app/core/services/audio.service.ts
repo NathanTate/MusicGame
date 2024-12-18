@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
-import { BehaviorSubject, Observable, Subject, takeUntil } from "rxjs";
+import { BehaviorSubject, Observable, Subject, takeUntil, throttleTime } from "rxjs";
 import { AudioState } from "../models/audioState";
-import { SongResponse } from "../models/songResponse";
+import { SongResponse } from "../models/song/songResponse";
 
 
 @Injectable({
@@ -16,29 +16,30 @@ export class AudioService {
     "pause",
     "timeupdate",
     "canplay",
+    "volumechange",
     "loadedmetadata",
     "loadstart"
   ]
 
   private state: AudioState = {
-    song: undefined,
     playing: false,
     ended: false,
     readableDuration: '',
     redableCurrentTime: '',
     duration: 0,
     currentTime: 0,
+    volume: 30,
+    muted: false,
     canPlay: false,
     error: false
   }
 
   private stateChange = new BehaviorSubject(this.state);
-  state$ = this.stateChange.asObservable();
+  state$ = this.stateChange.asObservable().pipe(throttleTime(1000));
   private stop$ = new Subject<void>();
   private _audio = new Audio();
 
   playStream(song: SongResponse, play: boolean = true) {
-    this._audio.volume = 0.15;
     this.stop();
     return this.streamObservable(song, play).pipe(takeUntil(this.stop$));
   }
@@ -57,6 +58,18 @@ export class AudioService {
 
   seekTo(seconds: number) {
     this._audio.currentTime = seconds;
+  }
+
+  updateVolume(volume: number) {
+    if (volume > 100) {
+      volume = 100;
+    } else if (volume <= 0) {
+      volume = 0;
+      this.state.muted = true;
+    } else {
+      this.state.muted = false;
+    }
+    this._audio.volume = volume / 100;
   }
 
   formatTime(time: number) {
@@ -88,6 +101,9 @@ export class AudioService {
         this.state.currentTime = this._audio.currentTime;
         this.state.redableCurrentTime = this.formatTime(this.state.currentTime);
         break;
+      case 'volumechange':
+        this.state.volume = this._audio.volume * 100;
+        break;
       case 'ended':
         this.state.ended = true
         this.state.playing = false;
@@ -103,13 +119,14 @@ export class AudioService {
 
   private resetState() {
     this.state = {
-      song: undefined,
       playing: false,
       ended: false,
       readableDuration: '',
       redableCurrentTime: '',
       duration: 0,
       currentTime: 0,
+      volume: 30,
+      muted: false,
       canPlay: false,
       error: false
     }
@@ -119,7 +136,7 @@ export class AudioService {
     return new Observable(subscriber => {
       this._audio.src = song.url;
       this._audio.load();
-      this.state.song = song;
+
       if (play) {
         this._audio.play();
       }

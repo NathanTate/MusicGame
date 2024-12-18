@@ -1,5 +1,5 @@
-import { ArtistResponse } from "./artistResponse";
-import { GenreResponse } from "./genreResponse";
+import { ArtistResponse } from "../user/artistResponse";
+import { GenreResponse } from "../genre/genreResponse";
 
 export interface SongResponse {
   songId: number;
@@ -9,7 +9,7 @@ export interface SongResponse {
   duration: number;
   isPrivate: boolean;
   releaseDate: string;
-  createdAt: string; 
+  createdAt: string;
   genres: GenreResponse[];
   photoUrl?: string | null;
   artist: ArtistResponse;

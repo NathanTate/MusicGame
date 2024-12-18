@@ -105,8 +105,8 @@ internal class PlaylistService : IPlaylistService
             Description = x.Description,
             IsPrivate = x.IsPrivate,
             TotalDuration = x.TotalDuration,
-            SongsCount = x.SongsCount,
             LikesCount = x.LikesCount,
+            SongsCount = x.Songs.Count,
             CreatedAt = x.CreatedAt,
             PhotoUrl = x.Photo == null ? null : x.Photo.URL,
             User = new ArtistResponse(x.User.Id, x.User.Email, x.User.DisplayName)
@@ -271,15 +271,25 @@ internal class PlaylistService : IPlaylistService
             return new ForbiddenAccessError();
         }
 
-        var songExists = await _dbContext.Songs.AnyAsync(x => x.SongId == model.SongId, cancellationToken);
+        var song = await _dbContext.Songs
+        .Select(x => new Song
+        {
+            SongId = x.SongId,
+            IsPrivate = x.IsPrivate
+        })
+        .FirstOrDefaultAsync(x => x.SongId == model.SongId, cancellationToken);
 
-        if (!songExists)
+        if (song is null)
         {
             return new NotFoundError($"Song with id {model.SongId} cannot be found");
         }
 
+        if (song.IsPrivate)
+        {
+            return new ValidationError($"Private songs cannot be added to playlists");
+        }
+
         var playlistSong = await _dbContext.PlaylistSongs
-            .Include(p => p.Playlist)
             .FirstOrDefaultAsync(x => x.SongId == model.SongId && x.PlaylistId == model.PlaylistId, cancellationToken);
 
         if (playlistSong is not null)
@@ -295,6 +305,7 @@ internal class PlaylistService : IPlaylistService
         };
 
         _dbContext.PlaylistSongs.Add(playlistSong);
+        playlist.TotalDuration += song.Duration;
 
         await _dbContext.SaveChangesAsync();
 
@@ -311,7 +322,21 @@ internal class PlaylistService : IPlaylistService
         }
 
         var playlistSong = await _dbContext.PlaylistSongs
-            .Include(p => p.Playlist)
+            .Select(x => new PlaylistSong
+            {
+                SongId = x.SongId,
+                PlaylistId = x.PlaylistId,
+                Song = new Song
+                {
+                    SongId = x.SongId,
+                    Duration = x.Song.Duration
+                },
+                Playlist = new Playlist
+                {
+                    PlaylistId = x.PlaylistId,
+                    TotalDuration = x.Playlist.TotalDuration
+                }
+            })
             .FirstOrDefaultAsync(x => x.SongId == songId && x.PlaylistId == playlistId, cancellationToken);
 
         if (playlistSong is null)
@@ -325,6 +350,7 @@ internal class PlaylistService : IPlaylistService
         }
 
         _dbContext.PlaylistSongs.Remove(playlistSong);
+        playlistSong.Playlist.TotalDuration -= playlistSong.Song.Duration;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -363,7 +389,8 @@ internal class PlaylistService : IPlaylistService
 
     public async Task<bool> IsPlaylistNameAvailable(string name, CancellationToken cancellationToken = default)
     {
-        return await _dbContext.Playlists.AnyAsync(p => p.Name.ToUpper() == name.ToUpper(), cancellationToken);
+        var exists = await _dbContext.Playlists.AnyAsync(p => p.Name.ToUpper() == name.ToUpper(), cancellationToken);
+        return !exists;
     }
 
     private async Task<Playlist?> GetByIdAsync(int playlistId, string? userId, CancellationToken cancellationToken = default)
@@ -374,12 +401,12 @@ internal class PlaylistService : IPlaylistService
     }
 
     private static Expression<Func<Playlist, object>> GetSortProperty(PlaylistsQueryRequest query) =>
-        query.SortColumn.ToLower() switch
+        query.SortColumn?.ToLower() switch
         {
             "name" => playlist => playlist.Name,
             "likes" => playlist => playlist.LikesCount,
             "duration" => playlist => playlist.TotalDuration,
-            "songsCount" => playlist => playlist.SongsCount,
+            "songsCount" => playlist => playlist.Songs.Count,
             _ => playlist => playlist.PlaylistId
         };
 
