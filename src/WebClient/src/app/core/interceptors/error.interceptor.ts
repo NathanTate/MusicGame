@@ -11,6 +11,10 @@ export function errorInterceptor(req: HttpRequest<unknown>, next: HttpHandlerFn)
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
       if (error && !req.url.includes('login') && !req.url.includes('register')) {
+        if (error.status === 400) {
+          messageService.add({ severity: 'error', summary: error.error.title, detail: error.error.message });
+          throw error;
+        }
         if (error.status === 500) {
           messageService.add({ severity: 'error', summary: `Internal Error ${error.status}`, detail: error.error })
           throw error;

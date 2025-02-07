@@ -9,6 +9,7 @@ internal class PlaylistMappingProfile : Profile
     {
         CreateMap<Playlist, PlaylistResponse>()
             .ForMember(dest => dest.PhotoUrl, opt => opt.MapFrom(src => src.Photo != null ? src.Photo.URL : ""))
+            .ForMember(dest => dest.SongsCount, opt => opt.MapFrom(src => src.Songs.Count))
             .ForMember(dest => dest.Songs, opt => opt.MapFrom(src => src.Songs.OrderBy(x => x.Position)));
 
         CreateMap<UpdatePlaylistRequest, Playlist>();

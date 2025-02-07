@@ -1,0 +1,133 @@
+@let data = searchData();
+
+<div class="layout scrollable scrollbar-vertical">
+  <header class="header">
+    <div class="h-full flex align-items-center gap-3 px-4">
+      @for (filter of filterTypes; track $index) {
+        <button 
+          (click)="setFilter(filter)" 
+          class="font-medium text-sm px-3 py-1 filter-btn" 
+          [class.active]="filter === currentFilter()">
+          {{filter}}
+        </button>
+      }
+    </div>
+  </header>
+  @if (data && data.hasItems) {
+    <div class="top-results-layout">
+      <section class="flex flex-column">
+        <h1 class="mb-2 font-semibold text-xl lg:text-2xl xl:text-3xl">Top results</h1>
+        @if (bestFitItem(); as item) {
+        <a [routerLink]="item.url" class="top-result">
+          <div class="image-wrapper">
+            <div class="image-preview">
+              @if (item.photoUrl) {
+                <img [src]="item.photoUrl" alt="song image">
+              } @else {
+                <div class="image-placeholder icon-wrapper" style="--size: 64px">
+                  <svg data-encore-id="icon" role="img" aria-hidden="true" data-testid="playlist" class="Svg-sc-ytk21e-0 bneLcE" viewBox="0 0 24 24">
+                    <path d="M6 3h15v15.167a3.5 3.5 0 1 1-3.5-3.5H19V5H8v13.167a3.5 3.5 0 1 1-3.5-3.5H6V3zm0 13.667H4.5a1.5 1.5 0 1 0 1.5 1.5v-1.5zm13 0h-1.5a1.5 1.5 0 1 0 1.5 1.5v-1.5z">
+                    </path>
+                  </svg>
+                </div>
+              }
+            </div>
+          </div>
+          <div class="mt-2">
+            <a class="text-2xl lg:text-3xl xl:text-4xl font-semibold" [routerLink]="item.url">{{item.name}}</a>
+            <div class="flex align-items-center gap-1 text-sm mt-2 md:mt-1 lg:mt-0">
+              <span>{{data.bestFitType | titlecase}}</span>
+              @if (item.artist) {
+                <span class="text-gray-100">•</span>
+                <a [routerLink]="['users', item.artist.userId]" class="text-gray-100 font-medium">{{item.artist.displayName}}</a>
+              }
+            </div>
+          </div>
+        </a>
+        }
+      </section>
+      <section>
+        <h2 class="mb-2 font-semibold text-xl lg:text-2xl xl:text-3xl">Songs</h2>
+        <div class="flex flex-column gap-2">
+          @for (song of data.songs.items; track song.songId) {
+            @if ($index < 4) {
+              <app-card-mini [title]="song.name" [imageSizePx]="32" [imgSrc]="song.photoUrl ?? ''" [link]="'/track/' + song.songId"/>
+            }
+          }
+        </div>
+      </section>
+    </div>
+    <section class="content-layout">
+      @if (data.users.totalCount > 0) {
+        <section class="content-section">
+          <div>
+            <div class="flex justify-content-between align-items-center">
+              <div>
+                <h2 class="text-lg md:text-2xl">Artists</h2>
+              </div>
+              <p-button label="Show all" [link]="true" styleClass="text-sm md:text-base"></p-button>
+            </div>
+          </div>
+          <div class="grid-container">
+            @for (user of data.users.items; track user.userId) {
+              <app-user-card [user]="user"/>
+            }
+          </div>
+        </section>
+      }
+      @if (data.playlists.totalCount > 0) {
+        <section class="content-section">
+          <div>
+            <div class="flex justify-content-between align-items-center">
+              <div>
+                <h2 class="text-lg md:text-2xl">Playlists</h2>
+              </div>
+              <p-button label="Show all" [link]="true" styleClass="text-sm md:text-base"></p-button>
+            </div>
+          </div>
+          <div class="grid-container">
+            @for (playlist of data.playlists.items; track playlist.playlistId) {
+              <app-playlist-card [playlist]="playlist"/>
+            }
+          </div>
+        </section>
+      }
+      @if (data.songs.totalCount > 0) {
+        <section class="content-section">
+          <div>
+            <div class="flex justify-content-between align-items-center">
+              <div>
+                <h2 class="text-lg md:text-2xl">Songs</h2>
+              </div>
+              <p-button label="Show all" [link]="true" styleClass="text-sm md:text-base"></p-button>
+            </div>
+          </div>
+          <div class="grid-container">
+            @for (song of data.songs.items; track song.songId) {
+              <app-track-card [song]="song"/>
+            }
+          </div>
+        </section>
+      }
+      @if (data.genres.totalCount > 0) {
+        <section class="content-section">
+          <div>
+            <div class="flex justify-content-between align-items-center">
+              <div>
+                <h2 class="text-lg md:text-2xl">Genres</h2>
+              </div>
+              <p-button label="Show all" [link]="true" styleClass="text-sm md:text-base"></p-button>
+            </div>
+          </div>
+          <div class="grid-container">
+            @for (genre of data.genres.items; track genre.genreId) {
+              <app-genre-card [genre]="genre"/>
+            }
+          </div>
+        </section>
+      }
+    </section>
+  } @else {
+    <h1 class="text-center">No matches for found for such term</h1>
+  }
+</div>

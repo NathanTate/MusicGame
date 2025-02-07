@@ -4,11 +4,12 @@ import { environment } from "../../environments/environment.development";
 import { ResetPassword } from "./models/resetPassword";
 import { Register } from "./models/register";
 import { Login } from "./models/login";
-import { TokenDto } from "./models/tokenDto";
+import { TokenDto, TokenWrapper } from "./models/tokenDto";
 import { tap } from "rxjs";
 import { AuthData } from "./models/authData";
 import { Router } from "@angular/router";
 import { AudioService } from "../core/services/audio.service";
+import { ArtistResponse } from "../core/models/user/artistResponse";
 
 @Injectable({
   providedIn: 'root'
@@ -16,7 +17,7 @@ import { AudioService } from "../core/services/audio.service";
 export class AuthService {
   private _baseUrl = environment.apiUrl + 'account/'
   private _authData = signal<AuthData | null>(null);
-  authData = this._authData.asReadonly();
+  public authData = this._authData.asReadonly();
 
   private http = inject(HttpClient);
   private router = inject(Router);
@@ -27,10 +28,17 @@ export class AuthService {
     if (authDataString) {
       this._authData.set(JSON.parse(authDataString) as AuthData);
     }
+
+    setInterval(() => {
+      const refreshToken = this.authData()?.tokens?.refreshToken;
+      if (refreshToken) {
+        this.refreshToken(refreshToken).subscribe();
+      }
+    }, 250000)
   }
 
   register(model: Register) {
-    return this.http.post<string>(this._baseUrl + 'register', model)
+    return this.http.post(this._baseUrl + 'register', model, { responseType: 'text' })
   }
 
   login(login: Login) {
@@ -49,9 +57,10 @@ export class AuthService {
   }
 
   refreshToken(model: TokenDto) {
-    return this.http.post<TokenDto>(this._baseUrl + 'refreshToken', model).pipe(
+    return this.http.post<TokenWrapper>(this._baseUrl + 'refreshToken', model).pipe(
       tap((tokens) => {
         this._authData.update(val => val ? ({ ...val, tokens }) : val)
+        this.setAuthData(this._authData());
       })
     )
   }
@@ -78,6 +87,16 @@ export class AuthService {
   }
 
   isAuthenticated() {
-    return this.authData() && Date.now() < new Date(this.authData()!.tokens.accessToken.expiresAt).getTime();
+    return this.authData() && Date.now() < new Date(this.authData()!.tokens?.refreshToken?.expiresAt)?.getTime();
+  }
+
+  authDataToArtist(data: AuthData) {
+    const artist: ArtistResponse = {
+      userId: data.userId,
+      email: data.email,
+      displayName: data.username
+    }
+
+    return artist;
   }
 }

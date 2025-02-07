@@ -1,0 +1,24 @@
+@let genr = genre();
+
+<article [attr.aria-labelledby]="labelById()" class="x-card" [routerLink]="['/genre', genr.genreId]">
+  <div class="image-wrapper">
+    <div class="image-preview" [class.rounded]="rounded()">
+      <div class="image-placeholder">
+        <img src="https://t.scdn.co/images/728ed47fc1674feb95f7ac20236eb6d7.jpeg" alt="">
+      </div>
+    </div>
+    <div>
+      <!-- play button goes here -->
+    </div>
+  </div>
+  <div class="flex column-gap-2">
+    <div class="x-card-info">
+      <p>
+         <a [id]="labelById()" class="x-lines-limit link-ahead" style="--max-lines: 2" [routerLink]="['/genre', genr.genreId]">
+          {{genr.name}}
+        </a>
+      </p>
+    </div>
+    <div></div>
+  </div>
+</article>

@@ -1,9 +1,10 @@
-﻿using Application.Models.Users;
-using AutoMapper;
-using Domain.Entities;
+﻿using Application.Interfaces;
+using Application.Models.Queries;
+using Application.Models.Users;
+using FluentResults;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Presentation.Extensions;
 
 namespace Presentation.Controllers;
 
@@ -11,37 +12,97 @@ namespace Presentation.Controllers;
 [Authorize]
 public class UserController : BaseApiController
 {
-    private readonly UserManager<User> _userManager;
-    private readonly IMapper _mapper;
-    public UserController(UserManager<User> userManager, IMapper mapper)
+    private readonly IUserService _userService;
+    public UserController(IUserService userService)
     {
-        _userManager = userManager;
-        _mapper = mapper;
+        _userService = userService;
     }
 
     [HttpGet("{email}")]
     public async Task<IActionResult> GetUser(string email)
     {
-        var user = await _userManager.FindByEmailAsync(email);
+        Result<UserResponse> result = await _userService.GetUserByEmailAsync(email);
 
-        if (user is null)
-        {
-            return NotFound($"User with email {email} cannot be found");
-        }
-
-        return Ok(_mapper.Map<UserResponse>(user));
+        return result.ToHttpResponse(HttpContext);
     }
 
     [HttpGet("byId/{userId}")]
     public async Task<IActionResult> GetUserById(string userId)
     {
-        var user = await _userManager.FindByIdAsync(userId);
+        Result<UserResponse> result = await _userService.GetUserAsync(userId);
 
-        if (user is null)
+        return result.ToHttpResponse(HttpContext);
+    }
+
+    [AllowAnonymous]
+    [HttpGet("{userId}/playlists")]
+    public async Task<IActionResult> GetUserPlaylists(string userId, [FromQuery] UserPlaylistsQuery query)
+    {
+        Result<UserResponse> result = await _userService.GetUserAsync(userId);
+
+        if (result.IsFailed)
         {
-            return NotFound($"User with id {userId} cannot be found");
+            return result.ToHttpResponse(HttpContext);
         }
 
-        return Ok(_mapper.Map<UserResponse>(user));
+        var isOwn = User?.GetUserId() == userId;
+        return Ok(await _userService.GetUserPlaylists(query, userId, isOwn, HttpContext.RequestAborted));
+    }
+
+    [AllowAnonymous]
+    [HttpGet("{userId}/playlists/liked")]
+    public async Task<IActionResult> GetLikedPlaylists(string userId, [FromQuery] UserPlaylistsQuery query)
+    {
+        Result<UserResponse> result = await _userService.GetUserAsync(userId);
+
+        if (result.IsFailed)
+        {
+            return result.ToHttpResponse(HttpContext);
+        }
+
+        return Ok(await _userService.GetLikedPlaylists(query, userId, HttpContext.RequestAborted));
+    }
+
+    [AllowAnonymous]
+    [HttpGet("{userId}/songs")]
+    public async Task<IActionResult> GetUserSongs(string userId, [FromQuery] UserSongsQuery query)
+    {
+        Result<UserResponse> result = await _userService.GetUserAsync(userId);
+
+        if (result.IsFailed)
+        {
+            return result.ToHttpResponse(HttpContext);
+        }
+
+        var isOwn = User?.GetUserId() == userId;
+        return Ok(await _userService.GetUsersSongs(query, userId, isOwn, HttpContext.RequestAborted));
+    }
+
+    [AllowAnonymous]
+    [HttpGet("{userId}/songs/liked")]
+    public async Task<IActionResult> GetLikedSongs(string userId, [FromQuery] UserSongsQuery query)
+    {
+        Result<UserResponse> result = await _userService.GetUserAsync(userId);
+
+        if (result.IsFailed)
+        {
+            return result.ToHttpResponse(HttpContext);
+        }
+
+        return Ok(await _userService.GetLikedSongs(query, userId, HttpContext.RequestAborted));
+    }
+
+    [AllowAnonymous]
+    [HttpGet("{userId}/songs/popular")]
+    public async Task<IActionResult> GetMostPopularSongs(string userId)
+    {
+        Result<UserResponse> result = await _userService.GetUserAsync(userId);
+
+        if (result.IsFailed)
+        {
+            return result.ToHttpResponse(HttpContext);
+        }
+
+        return Ok(await _userService.GetMostPopularSongs(userId, HttpContext.RequestAborted));
     }
 }

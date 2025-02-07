@@ -1,5 +1,16 @@
 @import '../../../variables.scss';
 
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(gray, rgba(194, 194, 194, 0.212));
+}
+
 .main-grid {
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -8,6 +19,7 @@
   height: 100vh;
   min-height: 100%;
   width: 100%;
+  min-width: 100%;
   position: relative;
   padding: $main-view-padding;
   overflow: hidden;

@@ -1,4 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core';
+import { formatDuration } from '../helpers/format-duration';
 
 @Pipe({
   name: 'formatDuration',
@@ -7,15 +8,7 @@ import { Pipe, PipeTransform } from '@angular/core';
 export class FormatDurationPipe implements PipeTransform {
 
   transform(duration: number): unknown {
-    const dateObj = new Date(duration * 1000);
-    const hours = dateObj.getUTCHours();
-    const minutes = dateObj.getUTCMinutes();
-    const seconds = dateObj.getSeconds();
-    const formattedTime = (hours ? hours.toString().padStart(2, '0') + ':' : '') +
-      minutes.toString().padStart(2, '0') + ':' +
-      seconds.toString().padStart(2, '0');
-
-    return formattedTime;
+    return formatDuration(duration);
   }
 
 }

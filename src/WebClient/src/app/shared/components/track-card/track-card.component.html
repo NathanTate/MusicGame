@@ -1,0 +1,55 @@
+@let track = song();
+
+<article [attr.aria-labelledby]="labelById()" class="x-card" [routerLink]="['/track', track.songId]">
+  <div class="image-wrapper">
+    <div class="image-preview" [class.rounded]="rounded()">
+      @if (track.photoUrl) {
+        <img [src]="track.photoUrl" alt="song image">
+      } @else {
+        <div class="image-placeholder icon-wrapper" style="--size: 64px">
+          <svg data-encore-id="icon" role="img" aria-hidden="true" data-testid="playlist" class="Svg-sc-ytk21e-0 bneLcE" viewBox="0 0 24 24">
+            <path d="M6 3h15v15.167a3.5 3.5 0 1 1-3.5-3.5H19V5H8v13.167a3.5 3.5 0 1 1-3.5-3.5H6V3zm0 13.667H4.5a1.5 1.5 0 1 0 1.5 1.5v-1.5zm13 0h-1.5a1.5 1.5 0 1 0 1.5 1.5v-1.5z">
+            </path>
+          </svg>
+        </div>
+      }
+    </div>
+    <div>
+      @if (isPlaying$ | async; as playing) {
+        <button class="play-button" (click)="onPause($event)">
+          <span class="icon-wrapper">
+            <svg data-encore-id="icon" role="img" aria-hidden="true" viewBox="0 0 24 24">
+              <path fill="#000" d="M5.7 3a.7.7 0 0 0-.7.7v16.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V3.7a.7.7 0 0 0-.7-.7H5.7zm10 0a.7.7 0 0 0-.7.7v16.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V3.7a.7.7 0 0 0-.7-.7h-2.6z"></path>
+            </svg>
+          </span>
+        </button>
+      } @else {
+        <button class="play-button" (click)="OnPlay($event)">
+          <span class="icon-wrapper">
+            <svg data-encore-id="icon" role="img" aria-hidden="true" viewBox="0 0 24 24">
+              <path fill="#000" d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606z">
+              </path>
+            </svg>
+          </span>
+        </button>
+      }
+    </div>
+  </div>
+  <div class="flex column-gap-2">
+    <div class="x-card-info">
+      @if (showTitle()) {
+        <p>
+          <a [id]="labelById()" class="x-lines-limit link-ahead" style="--max-lines: 2" [routerLink]="['/track', track.songId]">
+            {{track.name}}
+          </a>
+        </p>
+      }
+      <p>
+        <a class="text-sm x-lines-limit link-ahead" style="--text-color: var(--surface-500)" [routerLink]="['/user', track.artist.email]">
+          {{track.artist.displayName}}
+        </a>
+      </p>
+    </div>
+    <div></div>
+  </div>
+</article>

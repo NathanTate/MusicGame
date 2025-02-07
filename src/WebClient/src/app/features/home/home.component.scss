@@ -17,6 +17,23 @@
     height: 56px;
     z-index: 100;
     transition: background-color 300ms ease-out;
+
+    .filter-btn {
+      border: none;
+      border-radius: 9999px;
+      background-color: hsla(0, 0%, 100%, 0.2);
+      transition: background-color 150ms ease-in-out, color 150ms ease-in-out;
+
+      &:hover {
+        cursor: pointer;
+        background-color: hsla(0, 0%, 100%, 0.3);
+      }
+
+      &.active {
+        background-color: var(--primary-color);
+        color: var(--surface-ground);
+      }
+    }
   }
 
   .content-layout {

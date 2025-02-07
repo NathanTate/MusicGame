@@ -1,0 +1,76 @@
+@import '../../../variables';
+
+.layout {
+  padding: 1rem;
+  --header-opacity: 0;
+  height: 100%;
+  width: 100%;
+  border-radius: $global-border-radius;
+  background-color: var(--surface-card);
+  overflow-x: hidden;
+
+  .image-wrapper {
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .image-preview {
+    --size: 48px;
+    position: relative;
+    background-color: var(--surface-100);
+    padding-bottom: 100%;
+    border-radius: $global-border-radius;
+    margin-bottom: 12px;
+    height: var(--size);
+    width: var(--size);
+
+    img,
+    .image-placeholder {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+      border-radius: inherit;
+    }
+  }
+
+  .form-wrapper {
+    display: grid;
+  }
+
+  .form {
+    align-self: start;
+    display: grid;
+  }
+
+  .photo-form {
+    max-width: 300px;
+    width: 100%;
+    margin-inline: auto;
+    aspect-ratio: 1;
+  }
+}
+
+@media (min-width: 1024px) {
+  .layout {
+    .form-wrapper {
+      grid-template-columns: 350px 1fr;
+      gap: 1rem;
+    }
+  }
+}
+
+@media (min-width: 1440px) {
+  .layout {
+    .form {
+      grid-template-columns: 1fr 1fr;
+      column-gap: 1rem;
+    }
+
+    .span-2 {
+      grid-column: span 2;
+    }
+  }
+}

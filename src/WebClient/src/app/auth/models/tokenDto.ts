@@ -1,9 +1,9 @@
-export interface TokenDto {
-  accessToken: TokenBase;
-  refreshToken: TokenBase;
+export interface TokenWrapper {
+  accessToken: TokenDto;
+  refreshToken: TokenDto;
 }
 
-export interface TokenBase {
+export interface TokenDto {
   token: string;
   expiresAt: Date;
 }

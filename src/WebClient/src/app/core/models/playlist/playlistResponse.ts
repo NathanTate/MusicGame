@@ -1,5 +1,5 @@
-import { ArtistResponse } from "../artistResponse";
-import { SongResponse } from "../songResponse";
+import { ArtistResponse } from "../user/artistResponse";
+import { SongResponse } from "../song/songResponse";
 
 
 export interface PlaylistResponse {

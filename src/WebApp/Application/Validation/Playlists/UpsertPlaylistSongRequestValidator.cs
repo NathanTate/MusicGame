@@ -8,6 +8,6 @@ public class UpsertPlaylistSongRequestValidator : AbstractValidator<UpsertSongPl
     {
         RuleFor(x => x.PlaylistId).NotEmpty();
         RuleFor(x => x.SongId).NotEmpty();
-        RuleFor(x => x.Position).NotEmpty().GreaterThan(0);
+        RuleFor(x => x.Position).GreaterThan(0);
     }
 }

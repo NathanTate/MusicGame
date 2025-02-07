@@ -1,0 +1,91 @@
+.form-grid {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  grid-template-rows: auto 40px 1fr auto;
+  grid-template-areas:
+    'message message'
+    'photo name'
+    'photo description'
+    '. controls-area';
+  gap: 1rem;
+  padding-top: 0.35rem;
+
+  .control {
+    display: block;
+    width: 100%;
+    height: 100%;
+
+    &:focus+label {
+      opacity: 1;
+    }
+  }
+
+  .float-label {
+    position: relative;
+
+    label {
+      opacity: 0;
+      font-weight: 500;
+      font-size: 0.75rem;
+      background-color: var(--surface-card);
+      position: absolute;
+      top: -8px;
+      left: 8px;
+      z-index: 1000000;
+      transition: 150ms opacity;
+    }
+  }
+
+  .error-message {
+    grid-area: message;
+    background-color: var(--red-400);
+    min-height: 32px;
+    border-radius: 4px;
+
+    p {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0;
+      padding: 0.25rem 0.75rem;
+      font-size: 14px;
+    }
+  }
+}
+
+.photo-form {
+  grid-area: photo;
+  height: 180px;
+  width: 180px;
+}
+
+.name {
+  grid-area: name;
+}
+
+.description {
+  grid-area: description;
+}
+
+.controls-area {
+  display: flex;
+  justify-content: space-between;
+  grid-area: controls-area;
+}
+
+@media (max-width: 480px) {
+  .form-grid {
+    grid-template-areas:
+      'message message'
+      'photo photo'
+      'name name'
+      'description description'
+      'controls-area controls-area';
+    grid-template-rows: none;
+  }
+
+  .photo {
+    justify-self: center;
+  }
+}

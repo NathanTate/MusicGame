@@ -47,6 +47,7 @@
   }
 
   .image-wrapper {
+    flex-shrink: 0;
     height: 56px;
     width: 56px;
     border-radius: 4px;
@@ -106,6 +107,14 @@
         justify-content: flex-start;
         flex: 1;
       }
+
+      .control-active {
+        color: rgb(6, 240, 6) !important;
+
+        svg {
+          fill: rgb(6, 240, 6) !important;
+        }
+      }
     }
 
     .playbar {
@@ -122,6 +131,15 @@
     .right-content {
       display: flex;
       align-items: center;
+      justify-content: flex-end;
+      flex: 1;
+
+      .volume-wrapper {
+        display: flex;
+        align-items: center;
+        flex-basis: 100px;
+        flex-shrink: 0;
+      }
     }
   }
 

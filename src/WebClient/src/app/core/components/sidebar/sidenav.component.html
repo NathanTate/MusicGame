@@ -38,7 +38,7 @@
       <p-button (onClick)="menu.toggle($event)" icon="pi pi-plus" [text]="true" [rounded]="true"></p-button>
     }
   </div>
-  <div class="sidenav-content scrollable scrollbar-horizontal" appOverflowScroll="header">
+  <div class="sidenav-content scrollable scrollbar-vertical" appOverflowScroll="header">
     @if (isLoading() && false) {
       <ul>
         @for (item of [].constructor(5); track $index) {
@@ -53,44 +53,51 @@
       </ul>
     }
     <ul role-list class="list-none">
-      @for (item of playlists(); track item.playlistId) {
-        <li pRipple (contextmenu)="onContextMenu($event, item)" routerLink="playlist/{{item.playlistId}}" routerLinkActive="active" class="playlist-item flex align-items-center gap-3">
-          <div class="relative">
-            <div class="playlist-image-wrapper">
-              @if (item.photoUrl) {
-                <img src="https://misc.scdn.co/liked-songs/liked-songs-64.png" [alt]="item.name">
-              } @else {
-                <div class="default-image">
-                  <span class="icon-wrapper">
-                    <svg data-encore-id="icon" role="img" aria-hidden="true" data-testid="playlist" class="Svg-sc-ytk21e-0 bneLcE" viewBox="0 0 24 24">
-                      <path d="M6 3h15v15.167a3.5 3.5 0 1 1-3.5-3.5H19V5H8v13.167a3.5 3.5 0 1 1-3.5-3.5H6V3zm0 13.667H4.5a1.5 1.5 0 1 0 1.5 1.5v-1.5zm13 0h-1.5a1.5 1.5 0 1 0 1.5 1.5v-1.5z">
-                      </path>
-                    </svg>
-                  </span>
-                </div>
-              }
+        @for (item of allPlaylists(); track item.playlistId) {
+          <li pRipple (contextmenu)="onContextMenu($event, item)" routerLink="playlist/{{item.playlistId}}" routerLinkActive="active" class="playlist-item flex align-items-center gap-3">
+            <div class="relative">
+              <div class="playlist-image-wrapper">
+                @if (item.photoUrl) {
+                  <img [src]="item.photoUrl" [alt]="item.name">
+                } @else {
+                  <div class="default-image">
+                    <span class="icon-wrapper">
+                      <svg data-encore-id="icon" role="img" aria-hidden="true" data-testid="playlist" class="Svg-sc-ytk21e-0 bneLcE" viewBox="0 0 24 24">
+                        <path d="M6 3h15v15.167a3.5 3.5 0 1 1-3.5-3.5H19V5H8v13.167a3.5 3.5 0 1 1-3.5-3.5H6V3zm0 13.667H4.5a1.5 1.5 0 1 0 1.5 1.5v-1.5zm13 0h-1.5a1.5 1.5 0 1 0 1.5 1.5v-1.5z">
+                        </path>
+                      </svg>
+                    </span>
+                  </div>
+                }
+              </div>
             </div>
             @if (expanded()) {
-              <div>
-                <button class="play-hover-btn icon-wrapper">
-                  <svg data-encore-id="icon" role="img" aria-hidden="true" viewBox="0 0 24 24" class="Svg-sc-ytk21e-0 bneLcE">
-                    <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606z">
-                    </path>
-                  </svg>
-                </button>
+              <div class="playlist-text">
+                <p class="x-lines-limit" [class.text-primary]="(audioService.state$ | async)?.playlist?.playlistId === item.playlistId">{{item.name}}</p>
+                <span class="text-white-alpha-40 text-sm x-lines-limit">Playlist • {{item.user.displayName}}</span>
               </div>
             }
-          </div>
-          @if (expanded()) {
-            <div class="playlist-text">
-              <p class="x-lines-limit">{{item.name}}</p>
-              <span class="text-white-alpha-40 text-sm x-lines-limit">Playlist • {{item.user.displayName}}</span>
-            </div>
-          }
-        </li>
-      }
+            @if (expanded()) {
+              <button class="play-hover-btn icon-wrapper" (click)="$event.stopPropagation(); onPlaylistPlay(item)">
+                @if ((audioService.state$ | async); as state)
+                {
+                  @if (state.playing && state.playlist?.playlistId === item.playlistId) {
+                    <svg data-encore-id="icon" role="img" aria-hidden="true" viewBox="0 0 24 24">
+                      <path d="M5.7 3a.7.7 0 0 0-.7.7v16.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V3.7a.7.7 0 0 0-.7-.7H5.7zm10 0a.7.7 0 0 0-.7.7v16.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V3.7a.7.7 0 0 0-.7-.7h-2.6z">
+                      </path>
+                   </svg>
+                  } @else {
+                    <svg data-encore-id="icon" role="img" aria-hidden="true" viewBox="0 0 24 24" >
+                      <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606z">
+                      </path>
+                    </svg>
+                  }
+                }
+              </button>
+            }
+          </li>
+        }
     </ul>
-    <p-contextMenu appendTo="body" [model]="contextItems()" (onHide)="onHide()"></p-contextMenu>
   </div>
 </aside>
 

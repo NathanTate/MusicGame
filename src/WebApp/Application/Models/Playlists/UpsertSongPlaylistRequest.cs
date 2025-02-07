@@ -11,7 +11,7 @@ public sealed class UpsertSongPlaylistRequest
     public int PlaylistId { get; set; }
 
     [FromQuery]
-    public int Position { get; set; }
+    public int? Position { get; set; }
 }
 
 

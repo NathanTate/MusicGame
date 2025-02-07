@@ -13,7 +13,8 @@ using AutoMapper.QueryableExtensions;
 using Application.Common.UserHelpers;
 using Application.Models.Queries;
 using Application.Models;
-using System.Linq.Expressions;
+using Application.Services.Elastic;
+using GeniusLyrics.NET;
 
 namespace Application.Services;
 
@@ -23,12 +24,60 @@ internal class SongService : ISongService
     private readonly IMapper _mapper;
     private readonly IFileHandler _fileHandler;
     private readonly IUserContext _userContext;
-    public SongService(AppDbContext dbContext, IMapper mapper, IFileHandler fileHandler, IUserContext userContext)
+    private readonly SongsElasticService _elasticService;
+    private readonly GeniusClient _geniusClient;
+    public SongService(AppDbContext dbContext, SongsElasticService elasticService, IMapper mapper,
+        IFileHandler fileHandler, IUserContext userContext, GeniusClient geniusClient)
     {
         _dbContext = dbContext;
         _mapper = mapper;
         _fileHandler = fileHandler;
         _userContext = userContext;
+        _elasticService = elasticService;
+        _geniusClient = geniusClient;
+    }
+
+    public async Task<Result<bool>> ToggleLikeAsync(int songId, CancellationToken cancellationToken = default)
+    {
+        var currentUser = _userContext.GetCurrentUser();
+
+        if (currentUser is null)
+        {
+            return new ValidationError("User doesn't exist");
+        }
+
+        bool liked = false;
+        var like = await _dbContext.SongLike.FindAsync([songId, currentUser.UserId], cancellationToken);
+
+        if (like is not null)
+        {
+            _dbContext.Remove(like);
+        }
+        else
+        {
+            var playlist = await _dbContext.Songs.AsNoTracking().FirstOrDefaultAsync(x => x.SongId == songId);
+
+            if (playlist is null)
+            {
+                return new ValidationError($"Can't add like to not existed song - {songId}");
+            }
+            if (playlist.UserId == currentUser.UserId)
+            {
+                return new ValidationError("You can't like your own songs");
+            }
+
+            var songLike = new SongLike
+            {
+                SongId = songId,
+                UserId = currentUser.UserId
+            };
+
+            _dbContext.SongLike.Add(songLike);
+            liked = true;
+        }
+
+        await _dbContext.SaveChangesAsync();
+        return Result.Ok(liked);
     }
 
     public async Task<Result<SongResponse>> CreateSongAsync(CreateSongRequest model, CancellationToken cancellationToken = default)
@@ -83,35 +132,120 @@ internal class SongService : ISongService
             return new NotFoundError($"Song with id {songId} cannot be found");
         }
 
+        var songWithLyrics = await _geniusClient.GetSong(song.Name, "un");
+        song.Lyrics = songWithLyrics?.Lyrics;
+
+        var likesCount = await _dbContext.SongLike.Where(x => x.SongId == song.SongId).CountAsync(cancellationToken);
+        song.LikesCount = likesCount;
+
+
         return Result.Ok(song);
     }
 
-    public async Task<PagedList<SongResponse>> GetSongsAsync(SongsQueryRequest query, CancellationToken cancellationToken = default)
+    public async Task<PagedList<SongResponse>> GetSongsAsync(SongsQuery query, CancellationToken cancellationToken = default)
     {
         var userId = _userContext.GetCurrentUser()?.UserId;
 
         var songsQuery = _dbContext.Songs
             .AsNoTracking()
-            .Where(x => (!x.IsPrivate || x.UserId == userId));
-
-        if (!string.IsNullOrWhiteSpace(query.SearchTerm))
-        {
-            songsQuery = songsQuery.Where(x =>
-                x.Name.ToLower().Contains(query.SearchTerm.ToLower()) ||
-                x.User.DisplayName.ToLower().Contains(query.SearchTerm.ToLower()) ||
-                x.Genres.Any(x => x.NormalizedName.Contains(query.SearchTerm.ToUpper())));
-        }
+            .Where(x => !x.IsPrivate || x.UserId == userId);
 
         if (query.SortOrder == "desc")
         {
-            songsQuery = songsQuery.OrderByDescending(GetSortProperty(query));
+            songsQuery = songsQuery.OrderByDescending(query.GetSortProperty());
         }
         else
         {
-            songsQuery = songsQuery.OrderBy(GetSortProperty(query));
+            songsQuery = songsQuery.OrderBy(query.GetSortProperty());
         }
 
-        return await PagedList<SongResponse>.CreateAsync(songsQuery.ProjectTo<SongResponse>(_mapper.ConfigurationProvider), query.Page, query.PageSize);
+        List<int> searchIds = new();
+
+        if (!string.IsNullOrWhiteSpace(query.SearchTerm))
+        {
+            var elasticQuery = new ElasticQuery
+            {
+                PageSize = query.PageSize,
+                Page = query.Page,
+                SearchTerm = query.SearchTerm
+            };
+
+            var result = await _elasticService.SearchAsync(elasticQuery, ElasticIndex.SongsIndex);
+
+            if (result.IsFailed)
+            {
+                throw new ArgumentNullException(result.Errors.Select(x => x.Message).FirstOrDefault());
+            }
+
+            searchIds = result.Value.Select(x => Convert.ToInt32(x.Id)).ToList();
+
+            songsQuery = songsQuery.Where(x => searchIds.Contains(x.SongId));
+        }
+
+        var pagedList = await PagedList<SongResponse>.CreateAsync(songsQuery.ProjectTo<SongResponse>(_mapper.ConfigurationProvider), query.Page, query.PageSize);
+
+        var songIds = pagedList.Items.Select(x => x.SongId);
+
+        var songsLikes = _dbContext.SongLike
+            .AsNoTracking()
+            .Where(x => songIds.Contains(x.SongId))
+            .GroupBy(x => x.SongId)
+            .Select(x => new
+            {
+                SongId = x.Key,
+                LikesCount = x.Count(),
+            });
+
+        foreach (var item in songsLikes)
+        {
+            var matchingItem = pagedList.Items.Find(x => x.SongId == item.SongId);
+            if (matchingItem is not null)
+            {
+                matchingItem.LikesCount = item.LikesCount;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.SearchTerm))
+        {
+            var orderedItems = pagedList.Items.OrderBy(x => searchIds.IndexOf(x.SongId)).ToList();
+
+            return new PagedList<SongResponse>(orderedItems, pagedList.Page, pagedList.PageSize, pagedList.TotalCount);
+        }
+
+        return pagedList;
+    }
+
+    public async Task<PagedList<SongResponse>> GetByIdsAsync(IEnumerable<int> ids, BaseQuery query, CancellationToken cancellationToken = default)
+    {
+        var userId = _userContext.GetCurrentUser()?.UserId;
+
+        var songsQuery = _dbContext.Songs
+            .AsNoTracking()
+            .Where(x => !x.IsPrivate || x.UserId == userId)
+            .Where(x => ids.Contains(x.SongId));
+
+        var pagedList = await PagedList<SongResponse>.CreateAsync(songsQuery.ProjectTo<SongResponse>(_mapper.ConfigurationProvider), query.Page, query.PageSize);
+
+        var songsLikes = _dbContext.SongLike
+            .AsNoTracking()
+            .Where(x => ids.Contains(x.SongId))
+            .GroupBy(x => x.SongId)
+            .Select(x => new
+            {
+                SongId = x.Key,
+                LikesCount = x.Count(),
+            });
+
+        foreach (var item in songsLikes)
+        {
+            var matchingItem = pagedList.Items.Find(x => x.SongId == item.SongId);
+            if (matchingItem is not null)
+            {
+                matchingItem.LikesCount = item.LikesCount;
+            }
+        }
+
+        return pagedList;
     }
 
     public async Task<Result<SongResponse>> UpdateSongAsync(UpdateSongRequest model, CancellationToken cancellationToken = default)
@@ -123,7 +257,10 @@ internal class SongService : ISongService
             return new ValidationError("User doesn't exist");
         }
 
-        var song = await GetByIdAsync(model.SongId, currentUser.UserId, cancellationToken);
+        var song = await _dbContext.Songs
+            .Include(x => x.Genres)
+            .Where(x => x.SongId == model.SongId && (!x.IsPrivate || x.UserId == currentUser.UserId))
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (song is null)
         {
@@ -256,7 +393,7 @@ internal class SongService : ISongService
         var fileName = Path.GetFileName(song.Photo.URL);
         await _fileHandler.DeleteFileAsync(fileName, FileContainer.Photos, cancellationToken);
 
-        var photo = await _dbContext.Photos.FindAsync(song.Photo.PhotoId, cancellationToken);
+        var photo = await _dbContext.Photos.FindAsync([song.Photo.PhotoId], cancellationToken);
 
         if (photo is null)
         {
@@ -272,12 +409,29 @@ internal class SongService : ISongService
 
     public async Task<bool> IsSongNameAvailableAsync(string name, CancellationToken cancellationToken = default)
     {
-        return await _dbContext.Songs.AnyAsync<Song>(s => s.Name.ToUpper() == name.ToUpper(), cancellationToken);
+        var exists = await _dbContext.Songs.AnyAsync(p => p.Name.ToUpper() == name.ToUpper(), cancellationToken);
+        return !exists;
+    }
+
+    public async Task<Result<bool>> IsLiked(int songId, CancellationToken cancellationToken = default)
+    {
+        var currentUser = _userContext.GetCurrentUser();
+
+        if (currentUser is null)
+        {
+            return new ValidationError("User doesn't exist");
+        }
+
+
+        var like = await _dbContext.SongLike.AnyAsync(x => x.SongId == songId && x.UserId == currentUser.UserId, cancellationToken);
+
+        return Result.Ok(like);
     }
 
     private async Task<Song?> GetByIdAsync(int songId, string? userId, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Songs
+            .Include(x => x.Photo)
             .Where(x => x.SongId == songId && (!x.IsPrivate || x.UserId == userId))
             .FirstOrDefaultAsync(cancellationToken);
     }
@@ -297,15 +451,4 @@ internal class SongService : ISongService
             }
         }
     }
-
-    private static Expression<Func<Song, object>> GetSortProperty(SongsQueryRequest query) =>
-        query.SortColumn.ToLower() switch
-        {
-            "name" => song => song.Name,
-            "likes" => song => song.LikesCount,
-            "duration" => song => song.Duration,
-            "releaseDate" => song => song.ReleaseDate,
-            "createdDate" => song => song.CreatedAt,
-            _ => song => song.SongId
-        };
 }

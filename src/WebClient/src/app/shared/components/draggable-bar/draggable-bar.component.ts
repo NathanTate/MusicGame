@@ -13,6 +13,7 @@ export class DraggableBarComponent {
   valueChanged = output<number>();
   arrowValueStep = input<number>(5);
   value = input<number>(0);
+  live = input<boolean>(false);
   maxValue = input.required<number>();
   timeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -20,29 +21,50 @@ export class DraggableBarComponent {
     return this._progressBar().nativeElement;
   }
 
+  private getProgressOffsetX(pointer: PointerEvent, some: boolean = false) {
+    let progressBarRect = this.progressBar.getBoundingClientRect();
+    let offset = pointer.clientX - progressBarRect.left;
+    if (offset < 0) {
+      offset = 0;
+    } else if (offset > this.progressBar.clientWidth) {
+      offset = this.progressBar.clientWidth;
+    }
+
+    return offset;
+  }
+
   updateBar = computed(() => {
-    if (!this.progressBar) return;
+    if (!this.progressBar || !this.maxValue()) return;
     const percentage = this.value() === 0 ? 0 : this.value() / this.maxValue() * 100;
     this.progressBar.style.setProperty('--progress-width', `${percentage}%`);
   })
 
   @HostListener('pointerdown', ['$event'])
   onPointerDown(event: PointerEvent) {
+    event.preventDefault();
     this.isPointerDown.set(true);
     this.setProgressPosition(event);
+    this.progressBar.style.setProperty('--drag-control-opacity', `${1}`);
+    this.progressBar.style.setProperty('--progress-bg-color', 'rgb(6, 240, 6)');
   }
 
-  @HostListener('pointermove', ['$event'])
+  @HostListener('document:pointermove', ['$event'])
   onPointerMove(event: PointerEvent) {
     if (!this.isPointerDown()) return;
+    if (this.live()) {
+      this.valueFromOffset(event);
+    }
     this.setProgressPosition(event);
   }
 
   @HostListener('document:pointerup', ['$event'])
   onPointerUp(event: PointerEvent) {
+    event.preventDefault();
     if (!this.isPointerDown()) return;
     setTimeout(() => {
       this.isPointerDown.set(false);
+      this.progressBar.style.setProperty('--drag-control-opacity', `${0}`);
+      this.progressBar.style.setProperty('--progress-bg-color', 'unset');
       this.valueFromOffset(event);
     })
   }
@@ -79,12 +101,14 @@ export class DraggableBarComponent {
   }
 
   setProgressPosition(pointer: PointerEvent) {
-    const width = pointer.offsetX / this.progressBar.clientWidth * 100;
+    const offset = this.getProgressOffsetX(pointer, true);
+    const width = offset / this.progressBar.clientWidth * 100;
     this.progressBar.style.setProperty('--progress-width', `${width}%`);
   }
 
   valueFromOffset(pointer: PointerEvent) {
-    const percentage = pointer.offsetX / this.progressBar.clientWidth * 100;
+    const offset = this.getProgressOffsetX(pointer);
+    const percentage = offset / this.progressBar.clientWidth * 100;
     const value = this.maxValue() * (percentage / 100);
     this.valueChanged.emit(value);
   }

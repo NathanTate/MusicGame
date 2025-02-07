@@ -3,6 +3,13 @@
   <app-sidenav class="sidebar"></app-sidenav>
   <main class="main">
     <router-outlet></router-outlet>
+    @if (loadingService.isLoading$ | async) {
+      <div class="loading">
+        Loading....
+      </div>
+    }
   </main>
   <app-now-playing-bar class="footer"></app-now-playing-bar>
+  <app-playlist-context-menu/>
+  <app-song-context-menu/>
 </div>

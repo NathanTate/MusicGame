@@ -2,6 +2,12 @@
   <p-card class="w-full max-w-auth-card">
     <img src="svgs/soundcloud.svg" class="h-5rem md:h-6rem mx-auto"/>
     <h1 class="mt-0 mb-5 text-center text-2xl md:text-3xl">Register for Soundcloud</h1>
+    @if (error()) {
+      <div class="flex gap-3 align-items-center bg-red-400 px-4 py-2 mb-5 -mt-2 border-round-sm">
+        <i class="pi pi-info-circle" style="font-size: 1.25rem;"></i>
+        <span>{{error()}}</span>
+      </div>
+    }
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="w-full md:w-8 mx-auto">
       <div class="form-group">
         <label for="email">Email address</label>
@@ -72,7 +78,7 @@
           </div>
         }
       </div>
-      <p-button type="submit" label="Login" styleClass="w-full font-medium my-3"></p-button>
+      <p-button type="submit" label="Sign Up" styleClass="w-full font-medium my-3"></p-button>
     </form>
     <div class="text-center">
       <span>Already have an account? <a routerLink="/login">Sign In</a></span>

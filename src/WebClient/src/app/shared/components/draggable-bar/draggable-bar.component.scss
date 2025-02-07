@@ -2,6 +2,8 @@
 
 .progress-bar {
   --progress-width: 10%;
+  --drag-control-opacity: 0;
+  --progress-bg-color: unset;
   height: 12px;
   position: relative;
   width: 100%;
@@ -19,6 +21,14 @@
       .drag-control {
         opacity: 1;
       }
+    }
+  }
+
+  .progress {
+    background-color: var(--progress-bg-color, var(--primary-color));
+
+    .drag-control {
+      opacity: var(--drag-control-opacity);
     }
   }
 }

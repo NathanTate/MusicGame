@@ -1,0 +1,91 @@
+<div>
+  @if (form.invalid && (form.touched || form.dirty || isFormSubmitted())) {
+    <div class="message-block error-message">
+      <p class="">
+        <i class="pi pi-exclamation-circle"></i>
+        @if (name.hasError('required')) {
+          Name is required
+        } @else if (name.hasError('whitespaces')) {
+          Name cannot contain only whitespaces
+        } @else if (name.hasError('maxlength')) {
+          Name should be under 100 characters long
+        } @else if (name.hasError('nameUnavailable')) {
+          Name is already taken
+        } @else if (releaseDate.hasError('required')) {
+          Release date is required
+        } @else if (releaseDate.hasError('whitespaces')) {
+          Release date cannot contain only whitespaces
+        } @else if (releaseDate.hasError('required')) {
+          Release Date is required
+        } @else if (releaseDate.hasError('whitespaces')) {
+          Release Date cannot contain whitespaces
+        } @else if (genreIds.hasError('required')) {
+          At least one genre is required
+        }
+      </p>
+    </div>
+  }
+  <div class="form-wrapper mt-4">
+    <div class="photo-form mb-4">
+      <app-photo-form [photoUrl]="songData().photoUrl" (onDeleted)="onDeleted()" (onFileChanged)="onPhotoChanged($event)"/>
+    </div>
+    <form class="form" [formGroup]="form" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="name">Name</label>
+        <input
+          [class.is-invalid]="name.invalid && (name.touched || name.dirty || isFormSubmitted())"
+          class="form-control"
+          pInputText
+          formControlName="name"
+          id="name"/>
+      </div>
+      <div class="form-group">
+        <label for="releaseDate">Release Date</label>
+        <p-calendar
+          [inputStyleClass]="releaseDate.invalid && (releaseDate.touched || releaseDate.dirty || isFormSubmitted()) ? 'is-invalid' : ''"
+          styleClass="w-full"
+          formControlName="releaseDate"
+          iconDisplay="input"
+          [showIcon]="true"
+          [showClear]="true"
+          inputId="releaseDate"
+        />
+      </div>
+      <div class="form-group">
+        <label for="genres">Genres</label>
+        <p-multiSelect
+          appendTo="body"
+          styleClass="w-full"
+          [options]="(genres$ | async)?.items"
+          optionLabel="name"
+          optionValue="genreId"
+          formControlName="genreIds"
+          placeholder="Select genres"
+          [showClear]="true"
+          [selectAll]="false"
+          inputId="genres"
+        />
+      </div>
+      <div class="flex gap-4 span-2">
+        <div class="flex gap-2 align-items-center">
+          <p-radioButton
+            formControlName="isPrivate"
+            [value]=false
+            inputId="public"/>
+            <label for="public">Public</label>
+        </div>
+  
+        <div class="flex gap-2 align-items-center">
+          <p-radioButton
+            formControlName="isPrivate"
+            [value]="true"
+            inputId="private"/>
+          <label for="private">Private</label>
+        </div>
+      </div>
+      <div class="span-2 align-self-end mt-4">
+        <p-button type="submit" styleClass="px-8 w-full" label="Save Changes"></p-button>
+      </div>
+    </form>
+  </div>
+</div>

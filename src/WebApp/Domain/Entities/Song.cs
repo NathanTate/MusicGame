@@ -18,7 +18,7 @@ public class Song : ISoftDeletable
 
     public List<Genre> Genres { get; } = [];
     public List<PlaylistSong> Playlists { get; } = [];
-    public List<User> UserLikes { get; } = [];
+    public List<SongLike> UserLikes { get; } = [];
 
     public string UserId { get; set; } = null!;
     public User User { get; set; } = null!;

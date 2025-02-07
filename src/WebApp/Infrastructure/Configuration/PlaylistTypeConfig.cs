@@ -40,11 +40,6 @@ internal class PlaylistTypeConfig : IEntityTypeConfiguration<Playlist>
             .IsRequired(true);
 
         builder
-            .Property(b => b.SongsCount)
-            .HasDefaultValue(0)
-            .IsRequired(true);
-
-        builder
             .Property(b => b.UserId)
             .IsRequired(true);
 
@@ -61,23 +56,5 @@ internal class PlaylistTypeConfig : IEntityTypeConfiguration<Playlist>
             .HasForeignKey(b => b.UserId)
             .IsRequired(true)
             .OnDelete(DeleteBehavior.Cascade);
-
-        builder
-            .HasMany(b => b.UserLikes)
-            .WithMany(b => b.LikedPlaylists)
-            .UsingEntity<Dictionary<string, object>>(
-                "PlaylistLike",
-                j => j
-                    .HasOne<User>()
-                    .WithMany()
-                    .HasForeignKey("UserId")
-                    .OnDelete(DeleteBehavior.NoAction),
-                j => j
-                    .HasOne<Playlist>()
-                    .WithMany()
-                    .HasForeignKey("PlaylistId")
-                    
-            );
-
     }
 }

@@ -14,8 +14,10 @@
 
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="13.0.1" />
+    <PackageReference Include="Elastic.Clients.Elasticsearch" Version="8.17.1" />
     <PackageReference Include="FluentResults" Version="3.16.0" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.10.0" />
+    <PackageReference Include="GeniusLyrics.NET" Version="1.0.2" />
   </ItemGroup>
 
   <ItemGroup>

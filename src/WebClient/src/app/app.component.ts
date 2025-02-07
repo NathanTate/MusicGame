@@ -11,7 +11,7 @@ import { ToastModule } from 'primeng/toast';
   styleUrl: './app.component.scss'
 })
 export class AppComponent implements OnInit {
-  primengConfig = inject(PrimeNGConfig);
+  private readonly primengConfig = inject(PrimeNGConfig);
 
   ngOnInit(): void {
     this.primengConfig.ripple = true;

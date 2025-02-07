@@ -1,16 +1,21 @@
-<div class="layout scrollable scrollbar-horizontal" (scroll)="onScroll($event)">
+<div class="layout scrollable scrollbar-vertical" (scroll)="onScroll($event)">
   <header class="header">
     <div class="h-full flex align-items-center gap-3 px-4">
-      <p-skeleton width="10rem" styleClass="mb-2" />
-      <p-skeleton width="10rem" styleClass="mb-2" />
-      <p-skeleton width="10rem" styleClass="mb-2" />
+      @for (filter of filterTypes; track $index) {
+        <button 
+          (click)="setFilter(filter)" 
+          class="font-medium text-sm px-3 py-1 filter-btn" 
+          [class.active]="filter === currentFilter()">
+          {{filter}}
+        </button>
+      }
     </div>
   </header>
   <section class="content-layout">
     <div class="grid-container-header">
-      @for (song of songs(); track $index) {
+      @for (song of songs()?.items; track $index) {
         @if ($index < 4) {
-          <app-card-mini [title]="song.name"/>
+          <app-card-mini [title]="song.name" [imgSrc]="song.photoUrl ?? ''" [link]="'/songs/' + song.songId "/>
         }
       }
     </div>
@@ -18,14 +23,14 @@
       <div>
         <div class="flex justify-content-between align-items-center">
           <div>
-            <h2 class="text-lg md:text-2xl">Recommended today</h2>
+            <h2 class="text-lg md:text-2xl">Recommended for today</h2>
           </div>
-          <p-button label="See more" [link]="true" styleClass="text-sm md:text-base"></p-button>
+          <p-button label="Show all" [link]="true" styleClass="text-sm md:text-base"></p-button>
         </div>
       </div>
       <div class="grid-container">
-        @for (song of songs(); track song.songId) {
-          <app-track-playlist-card [song]="song"/>
+        @for (playlist of playlists()?.items; track playlist.playlistId) {
+          <app-playlist-card [playlist]="playlist"/>
         }
       </div>
     </section>
@@ -35,12 +40,12 @@
           <div>
             <h2 class="text-lg md:text-2xl">Recommended today</h2>
           </div>
-          <p-button label="See more" [link]="true" styleClass="text-sm md:text-base"></p-button>
+          <p-button label="Show all" [link]="true" styleClass="text-sm md:text-base"></p-button>
         </div>
       </div>
       <div class="grid-container">
-        @for (song of songs(); track song.songId) {
-          <app-track-playlist-card [song]="song"/>
+        @for (song of songs()?.items; track song.songId) {
+          <app-track-card [song]="song"/>
         }
       </div>
     </section>
@@ -50,12 +55,12 @@
           <div>
             <h2 class="text-lg md:text-2xl">Recommended today</h2>
           </div>
-          <p-button label="See more" [link]="true" styleClass="text-sm md:text-base"></p-button>
+          <p-button label="Show all" [link]="true" styleClass="text-sm md:text-base"></p-button>
         </div>
       </div>
       <div class="grid-container">
-        @for (song of songs(); track song.songId) {
-          <app-track-playlist-card [song]="song"/>
+        @for (song of songs()?.items; track song.songId) {
+          <app-track-card [song]="song"/>
         }
       </div>
     </section>
@@ -65,14 +70,15 @@
           <div>
             <h2 class="text-lg md:text-2xl">Recommended today</h2>
           </div>
-          <p-button label="See more" [link]="true" styleClass="text-sm md:text-base"></p-button>
+          <p-button label="Show all" [link]="true" styleClass="text-sm md:text-base"></p-button>
         </div>
       </div>
       <div class="grid-container">
-        @for (song of songs(); track song.songId) {
-          <app-track-playlist-card [song]="song"/>
+        @for (song of songs()?.items; track song.songId) {
+          <app-track-card [song]="song"/>
         }
       </div>
     </section>
   </section>
+
 </div>

@@ -1,4 +1,6 @@
 using Application;
+using Application.Services.Elastic;
+using Domain.Enums;
 using Infrastructure;
 using Infrastructure.Seed;
 using Microsoft.AspNetCore.Identity;
@@ -60,7 +62,30 @@ async Task SeedData()
         try
         {
             var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            var songsElasticService = scope.ServiceProvider.GetRequiredService<SongsElasticService>();
+            var playlistsElasticService = scope.ServiceProvider.GetRequiredService<PlaylistsElasticService>();
+            var usersElasticService = scope.ServiceProvider.GetRequiredService<UsersElasticService>();
+            var genresElasticService = scope.ServiceProvider.GetRequiredService<GenresElasticService>();
 
+            List<Task> createIndexTasks = new()
+            {
+                songsElasticService.CreateIndexIfNotExistsAsync(ElasticIndex.SongsIndex),
+                playlistsElasticService.CreateIndexIfNotExistsAsync(ElasticIndex.PlaylistsIndex),
+                usersElasticService.CreateIndexIfNotExistsAsync(ElasticIndex.UsersIndex),
+                genresElasticService.CreateIndexIfNotExistsAsync(ElasticIndex.GenresIndex)
+            };
+
+            await Task.WhenAll(createIndexTasks);
+
+            List<Task> reindexTasks = new()
+            {
+                songsElasticService.ReindexAllAsync(),
+                playlistsElasticService.ReindexAllAsync(),
+                usersElasticService.ReindexAllAsync(),
+                genresElasticService.ReindexAllAsync()
+            };
+
+            await Task.WhenAll(reindexTasks);
             await SeedRoles.Seed(roleManager);
         }
         catch (Exception ex)
