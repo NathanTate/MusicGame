@@ -2,6 +2,6 @@ import { BaseQuery } from "./baseQuery";
 
 export class SongsQuery extends BaseQuery {
   searchTerm: string = '';
-  sortOrder: string = 'asc';
+  sortOrder: 'asc' | 'desc' = 'asc';
   sortColumn: string = '';
 }

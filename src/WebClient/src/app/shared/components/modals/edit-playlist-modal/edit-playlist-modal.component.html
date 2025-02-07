@@ -1,0 +1,42 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="form-grid">
+  @if (name.invalid && (name.touched || name.dirty || isFormSubmitted()) || description.invalid) {
+    <div class="message-block error-message">
+      <p class="">
+        <i class="pi pi-exclamation-circle"></i>
+        @if (name.hasError('required')) {
+          Name is required
+        } @else if (name.hasError('whitespaces')) {
+          Name cannot contain only whitespaces
+        } @else if (name.hasError('maxlength')) {
+          Name should be under 100 characters long
+        } @else if (name.hasError('nameUnavailable')) {
+          Name is already taken
+        } @else if (description.hasError('minlength')) {
+          Description should be at least 5 characters long
+        } @else if (description.hasError('maxlength')) {
+          Description should be under 500 characters long
+        } @else if (description.hasError('whitespaces')) {
+          Description cannot contain only whitespaces
+        }
+      </p>
+    </div>
+  }
+  <div class="photo-form">
+    <app-photo-form [photoUrl]="playlistData().photoUrl" (onDeleted)="onDeleted()" (onFileChanged)="onPhotoChanged($event)"></app-photo-form>
+  </div>
+  <div class="name float-label">
+    <input id="name" class="control" type="text" pInputText formControlName="name" placeholder="Add a name">
+    <label for="name">Name</label>
+  </div>
+  <div class="description float-label">
+    <textarea id="description" class="control" pInputTextarea formControlName="description" style="resize: none;" placeholder="Add an optional description"></textarea>
+    <label for="description">Description</label>
+  </div>
+  <div class="controls-area">
+    <div>
+      <p-checkbox formControlName="isPrivate" [binary]="true" [value]="true" inputId="isPrivate"/>
+      <label for="isPrivate" class="ml-2 mb-0 font-medium">Is Private</label>
+    </div>
+    <p-button type="submit" label="Save" styleClass="font-medium"></p-button>
+  </div>
+</form>

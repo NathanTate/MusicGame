@@ -20,6 +20,6 @@ public class User : IdentityUser, ISoftDeletable
     public Photo? Photo { get; set; }
     public List<Playlist> Playlists { get; } = [];
     public List<Song> Songs { get; } = [];
-    public List<Song> LikedSongs { get; } = [];
-    public List<Playlist> LikedPlaylists { get; } = [];
+    public List<SongLike> LikedSongs { get; } = [];
+    public List<PlaylistLike> LikedPlaylists { get; } = [];
 }

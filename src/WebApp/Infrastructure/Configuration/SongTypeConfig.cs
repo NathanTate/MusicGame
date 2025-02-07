@@ -89,21 +89,5 @@ internal class SongTypeConfig : IEntityTypeConfiguration<Song>
                    .WithMany()
                    .HasForeignKey("SongId")
            );
-
-        builder
-           .HasMany(b => b.UserLikes)
-           .WithMany(b => b.LikedSongs)
-           .UsingEntity<Dictionary<string, object>>(
-               "SongLike",
-               j => j
-                   .HasOne<User>()
-                   .WithMany()
-                   .HasForeignKey("UserId")
-                   .OnDelete(DeleteBehavior.NoAction),
-               j => j
-                   .HasOne<Song>()
-                   .WithMany()
-                   .HasForeignKey("SongId")
-           );
     }
 }

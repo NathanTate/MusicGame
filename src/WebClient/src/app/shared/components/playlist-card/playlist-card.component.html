@@ -2,7 +2,7 @@
 
 <article [attr.aria-labelledby]="labelById()" class="x-card" [routerLink]="['/playlist', pl.playlistId]">
   <div class="image-wrapper">
-    <div class="image-preview">
+    <div class="image-preview" [class.rounded]="rounded()">
       @if (pl.photoUrl) {
         <img [src]="pl.photoUrl" alt="song image">
       } @else {
@@ -22,7 +22,7 @@
     <div class="x-card-info">
       @if (showTitle()) {
         <p>
-          <a [id]="labelById()" class="x-lines-limit link-ahead" style="--max-lines: 2" routerLink="/playlist/3">
+          <a [id]="labelById()" class="x-lines-limit link-ahead" style="--max-lines: 2" [routerLink]="['/playlist', pl.playlistId]">
             {{pl.name}}
           </a>
         </p>

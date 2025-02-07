@@ -28,7 +28,9 @@
   }
 
   .image-wrapper {
+    flex-shrink: 0;
     position: relative;
+
   }
 
   .play-button {
@@ -57,6 +59,10 @@
       width: 100%;
       object-fit: cover;
       border-radius: inherit;
+    }
+
+    &.rounded {
+      border-radius: 50%;
     }
 
   }

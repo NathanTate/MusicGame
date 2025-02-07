@@ -2,7 +2,7 @@ import { BaseQuery } from "./baseQuery";
 
 export class PlaylistsQuery extends BaseQuery {
   searchTerm: string = '';
-  sortOrder: string = 'asc';
+  sortOrder: 'asc' | 'desc' = 'asc';
   sortColumn: string = '';
-  isPrivate: boolean | null = null;
+  isPrivate?: boolean;
 }

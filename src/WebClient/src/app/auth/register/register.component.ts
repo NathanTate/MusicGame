@@ -6,7 +6,10 @@ import { DividerModule } from 'primeng/divider';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { noWhiteSpacesValidator } from '../../shared/validators/no-whitespaces-validator';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../auth.service';
+import { catchError, throwError } from 'rxjs';
+import { MessageService } from 'primeng/api';
 
 @Component({
   selector: 'app-register',
@@ -16,12 +19,16 @@ import { RouterLink } from '@angular/router';
   styles: ``
 })
 export class RegisterComponent implements OnInit {
-  form!: FormGroup;
-  isFormSubmitted = signal(false);
-  mediumRegex = '^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9])(?=.{6,})'
-  strongRegex = '^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9])(?=.{8,})';
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly fb = inject(FormBuilder);
+  private readonly messageService = inject(MessageService);
 
-  private fb = inject(FormBuilder);
+  public form!: FormGroup;
+  public isFormSubmitted = signal(false);
+  public readonly mediumRegex = '^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9])(?=.{6,})';
+  public readonly strongRegex = '^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9])(?=.{8,})';
+  public error = signal<string | null>(null);
 
   ngOnInit(): void {
     this.initForm();
@@ -41,6 +48,16 @@ export class RegisterComponent implements OnInit {
     if (!this.form.valid) {
       this.form.updateValueAndValidity();
     }
+
+    this.authService.register(this.form.value).pipe(catchError(error => {
+      this.error.set(error.error.message || error.error.errors ? error.error.errors.ValidationError[0] : 'Unknown Error');
+      return throwError(() => error);
+    })).subscribe(() => {
+      localStorage.setItem("email", this.email.value);
+      this.error.set(null);
+      this.messageService.add({ severity: 'success', summary: 'Confirm your email', detail: 'Please check your email for confirmation link.' })
+      this.router.navigate(['/login'])
+    })
   }
 
   get email() {

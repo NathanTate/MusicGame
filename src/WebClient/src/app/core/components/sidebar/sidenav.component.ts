@@ -4,84 +4,50 @@ import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { PlaylistService } from '../../services/playlist.service';
-import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
 import { SkeletonModule } from 'primeng/skeleton';
 import { Ripple } from 'primeng/ripple';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 import { OverflowScrollDirective } from '../../../shared/directives/overflow-scroll.directive';
-import { DialogModule } from 'primeng/dialog';
 import { PlaylistResponse } from '../../models/playlist/playlistResponse';
-import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { PlaylistListResponse } from '../../models/playlist/playlistListResponse';
-import { EditPlaylistModalComponent } from '../../../shared/components/edit-playlist-modal/edit-playlist-modal.component';
 import { AuthService } from '../../../auth/auth.service';
-import { PlaybackState, PlaybackStateService } from '../../services/playbackState.service';
+import { AudioService } from '../../services/audio.service';
+import { AsyncPipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { forkJoin, take } from 'rxjs';
+import { PlaylistListResponse } from '../../models/playlist/playlistListResponse';
+import { UserService } from '../../services/user.service';
+import { PlaylistContextService } from '../../services/context-menu.service';
+import { AudioState } from '../../models/audioState';
 
 @Component({
   selector: 'app-sidenav',
   standalone: true,
-  imports: [ButtonModule, RouterLink, RouterLinkActive, MenuModule,
-    ContextMenuModule, SkeletonModule, Ripple, ScrollPanelModule, OverflowScrollDirective, DialogModule],
+  imports: [ButtonModule, RouterLink, RouterLinkActive, MenuModule, SkeletonModule, Ripple,
+    ScrollPanelModule, OverflowScrollDirective, AsyncPipe],
   templateUrl: './sidenav.component.html',
-  styleUrl: './sidenav.component.scss',
-  providers: [DialogService]
+  styleUrl: './sidenav.component.scss'
 })
 export class SidenavComponent implements OnInit {
-  private playlistService = inject(PlaylistService)
-  private dialogService = inject(DialogService)
-  private router = inject(Router);
-  private authService = inject(AuthService);
-  private playbackStateService = inject(PlaybackStateService);
-  private destroyRef = inject(DestroyRef);
+  private readonly playlistService = inject(PlaylistService)
+  private readonly authService = inject(AuthService);
+  public readonly audioService = inject(AudioService);
+  private readonly userService = inject(UserService);
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly playlistContextMenu = inject(PlaylistContextService);
 
-  cm = viewChild.required(ContextMenu);
-  expanded = signal(window.innerWidth > 1024);
-  items = signal<MenuItem[] | undefined>(undefined);
-  contextItems = signal<MenuItem[] | undefined>(undefined);
-  playlists = signal<PlaylistListResponse | null>(null);
-  playbackState = signal<PlaybackState | undefined>(undefined);
-  isLoading = signal(false);
-  selectedPlaylist = signal<PlaylistResponse | null>(null);
-  timeoutId: ReturnType<typeof setTimeout> | undefined;
-  ref: DynamicDialogRef | undefined;
+  public allPlaylists = signal<PlaylistResponse[]>([]);
+  public userPlaylists = signal<PlaylistListResponse | null>(null);
+  public likedPlaylists = signal<PlaylistListResponse | null>(null);
+  public expanded = signal(window.innerWidth > 1024);
+  public items = signal<MenuItem[] | undefined>(undefined);
 
-  onContextMenu(event: MouseEvent, playlist: PlaylistResponse): void {
-    this.selectedPlaylist.set(playlist);
-    this.contextItems.set(this.getMenuItemsForPlaylist(playlist));
-    this.cm().show(event);
-  }
+  public isLoading = signal(false);
+  public selectedPlaylist = signal<PlaylistResponse | null>(null);
+  private timeoutId: ReturnType<typeof setTimeout> | undefined;
 
-  getMenuItemsForPlaylist(playlist: PlaylistResponse): MenuItem[] {
-    let menuItems: MenuItem[] | undefined;
-    if (playlist.user.email === this.authService.authData()?.email) {
-      menuItems = [
-        {
-          icon: 'pi pi-pencil',
-          label: 'Edit details',
-          command: () => this.openModal()
-        },
-        {
-          icon: 'pi pi-trash',
-          label: 'Delete',
-          command: () => this.deletePlaylist(this.selectedPlaylist()!.playlistId)
-        }
-      ]
-    } else {
-      menuItems = [
-        {
-          icon: 'pi pi-check-circle',
-          label: 'Remove from your Library',
-          command: () => console.log('removed')
-        }
-      ]
-    }
-
-    return menuItems;
-  }
-
-  onHide() {
-    this.selectedPlaylist.set(null);
+  onContextMenu(event: MouseEvent, playlist: PlaylistResponse) {
+    this.playlistContextMenu.open(event, playlist);
   }
 
   @HostListener('window:resize', ['$event'])
@@ -92,10 +58,15 @@ export class SidenavComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.getPlaylists();
-    this.playbackStateService.state$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((state) => {
-      this.playbackState.set(state);
+    this.playlistService.playlistUpdated$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.getPlaylists();
     })
+
+    this.playlistContextMenu.onItemDeleted.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.getPlaylists(true);
+    })
+
+    this.getPlaylists(true);
     this.items.set([
       {
         label: 'Logout',
@@ -104,23 +75,6 @@ export class SidenavComponent implements OnInit {
     ])
   }
 
-  openModal() {
-    this.ref = this.dialogService.open(EditPlaylistModalComponent, {
-      header: 'Edit details',
-      width: '524px',
-      modal: true,
-      breakpoints: {
-        '768px': '96vw',
-      },
-      data: {
-        playlist: this.selectedPlaylist()
-      },
-
-      // footer: '<p class="text-sm">By proceeding, you agree to give SoundCloud access to the image you choose to upload. Please make sure you have the right to upload the image<p>'
-    })
-  }
-
-
   createPlaylist() {
     this.playlistService.createPlaylist().subscribe((playlist) => {
       this.router.navigate(['/playlist', playlist.playlistId]);
@@ -128,25 +82,48 @@ export class SidenavComponent implements OnInit {
     })
   }
 
-  deletePlaylist(playlistId: number) {
-    this.playlistService.deletePlaylist(playlistId).subscribe(() => {
-      this.getPlaylists();
-    });
-  }
-
-  getPlaylists() {
-    this.timeoutId = setTimeout(() => this.isLoading.set(true), 500)
-    this.playlistService.getPlaylists(this.playlistService.playlistsQuery).subscribe({
-      next: (playlists) => {
-        this.playlists.set(playlists);
-        clearTimeout(this.timeoutId);
-        this.isLoading.set(false);
-      },
-      error: () => {
-        clearTimeout(this.timeoutId)
-        this.isLoading.set(false)
+  onPlaylistPlay(playlist: PlaylistResponse) {
+    this.audioService.state$.pipe(take(1)).subscribe((state: AudioState) => {
+      if (state.playlist && state.playlist.playlistId === playlist.playlistId) {
+        state.playing ? this.audioService.pause() : this.audioService.play();
+      } else {
+        this.playlistService.getPlaylist(playlist.playlistId).subscribe((response: PlaylistResponse) => {
+          const song = response.songs[0].song;
+          this.audioService.playStream(song, response, true).subscribe();
+        })
       }
     })
+  }
+
+  getPlaylists(includeLiked: boolean = false) {
+    this.timeoutId = setTimeout(() => this.isLoading.set(true), 500)
+    const authData = this.authService.authData();
+    if (authData) {
+      const userPlaylists$ = this.userService.getUserPlaylists(authData.userId, { ...this.userService.playlistsQuery });
+      const likedPlaylists$ = this.userService.getUserLikedPlaylists(authData.userId, { ...this.userService.playlistsQuery });
+      const likedSongs$ = this.userService.getUserLikedSongs(authData.userId, { ...this.userService.songsQuery })
+
+      includeLiked ?
+        forkJoin([userPlaylists$, likedPlaylists$, likedSongs$])
+          .subscribe(([userPlaylists, likedPlaylists, likedSongs]) => {
+            const user = this.authService.authDataToArtist(authData);
+            const likedSongsPlaylist = this.userService.createPlaylistFromSongs(likedSongs, user);
+            this.userService.likedSongsPlaylist.set(likedSongsPlaylist);
+
+            this.userPlaylists.set(userPlaylists);
+            this.likedPlaylists.set(likedPlaylists);
+            this.allPlaylists.set([likedSongsPlaylist, ...userPlaylists.items, ...likedPlaylists.items]);
+          })
+        : forkJoin([userPlaylists$, likedSongs$])
+          .subscribe(([userPlaylists, likedSongs]) => {
+            const user = this.authService.authDataToArtist(authData);
+            const likedSongsPlaylist = this.userService.createPlaylistFromSongs(likedSongs, user);
+            this.userService.likedSongsPlaylist.set(likedSongsPlaylist);
+
+            this.userPlaylists.set(userPlaylists);
+            this.allPlaylists.set([likedSongsPlaylist, ...userPlaylists.items, ...this.likedPlaylists()?.items || []]);
+          })
+    }
   }
 
 }

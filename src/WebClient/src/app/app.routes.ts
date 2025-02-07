@@ -9,6 +9,11 @@ import { PlaylistComponent } from './features/playlist/playlist.component';
 import { songsResolver } from './core/resolvers/songs.resolver';
 import { NotFoundComponent } from './core/components/not-found/not-found.component';
 import { playlistResolver } from './core/resolvers/playlist.resolver';
+import { UploadTrackComponent } from './features/upload-track/upload-track.component';
+import { genresResolver } from './core/resolvers/genres.resolver';
+import { SearchPageComponent } from './features/search-page/search-page.component';
+import { TrackPageComponent } from './features/track-page/track-page.component';
+import { songResolver } from './core/resolvers/song.resolver';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent, canActivate: [canAuthGuard] },
@@ -34,9 +39,28 @@ export const routes: Routes = [
         component: PlaylistComponent
       },
       {
+        path: 'track/:id',
+        runGuardsAndResolvers: 'always',
+        resolve: {
+          song: songResolver
+        },
+        component: TrackPageComponent
+      },
+      {
+        path: 'upload-track',
+        resolve: {
+          genres: genresResolver
+        },
+        component: UploadTrackComponent
+      },
+      {
         path: 'admin',
         loadChildren: () => import('./features/admin/admin.routes')
           .then(m => m.routes)
+      },
+      {
+        path: 'search/:searchTerm',
+        component: SearchPageComponent
       }
     ]
   },

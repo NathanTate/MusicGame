@@ -13,7 +13,7 @@ public class Playlist : ISoftDeletable
     public bool isDeleted { get; set; }
     public DateTime? DeletedOnUtc { get; set; }
 
-    public List<User> UserLikes { get; } = [];
+    public List<PlaylistLike> UserLikes { get; } = [];
     public List<PlaylistSong> Songs { get; } = [];
 
     public string UserId { get; set; } = null!;

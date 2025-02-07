@@ -47,6 +47,7 @@
   }
 
   .image-wrapper {
+    flex-shrink: 0;
     height: 56px;
     width: 56px;
     border-radius: 4px;
@@ -105,6 +106,14 @@
         align-items: center;
         justify-content: flex-start;
         flex: 1;
+      }
+
+      .control-active {
+        color: rgb(6, 240, 6) !important;
+
+        svg {
+          fill: rgb(6, 240, 6) !important;
+        }
       }
     }
 

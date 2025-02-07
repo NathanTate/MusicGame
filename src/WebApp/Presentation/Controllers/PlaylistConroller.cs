@@ -24,16 +24,9 @@ public class PlaylistConroller : BaseApiController
 
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> GetPlaylists([FromQuery] PlaylistsQueryRequest query)
+    public async Task<IActionResult> GetPlaylists([FromQuery] PlaylistsQuery query)
     {
         return Ok(await _playlistService.GetPlaylistsAsync(query, HttpContext.RequestAborted));
-    }
-
-    [HttpGet("/api/{userId}/playlists")]
-    public async Task<IActionResult> GetUserPlaylists(string userId)
-    {
-        Result<List<PlaylistResponse>> result = null;
-        return Ok();
     }
 
     [HttpGet("{playlistId}")]
@@ -133,5 +126,21 @@ public class PlaylistConroller : BaseApiController
     public async Task<IActionResult> IsPlaylistNameAvailable(NameRequest model)
     {
         return Ok(await _playlistService.IsPlaylistNameAvailable(model.name, HttpContext.RequestAborted));
+    }
+
+    [HttpPost("{playlistId}/like")]
+    public async Task<IActionResult> ToggleLike(int playlistId)
+    {
+        Result<bool> result = await _playlistService.ToggleLikeAsync(playlistId, HttpContext.RequestAborted);
+
+        return result.ToHttpResponse(HttpContext);
+    }
+
+    [HttpGet("{playlistId}/is-liked")]
+    public async Task<IActionResult> IsLiked(int playlistId)
+    {
+        Result<bool> result = await _playlistService.IsLiked(playlistId, HttpContext.RequestAborted);
+
+        return result.ToHttpResponse(HttpContext);
     }
 }

@@ -1,0 +1,90 @@
+@let s = song();
+
+<div class="layout" [style]="'--background-color:' + randomColor()">
+  <div *ngIf="state$ | async as state" class="h-full scrollable scrollbar-vertical" (scroll)="onScroll($event)">
+    @if (s) {
+      <header class="main-header">
+        <div class="content h-full flex gap-2 align-items-center px-4">
+          @if (state.playing && state.song?.songId === s.songId) {
+            <button class="play-button" (click)="onPause()">
+              <span class="icon-wrapper">
+                <svg data-encore-id="icon" role="img" aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M5.7 3a.7.7 0 0 0-.7.7v16.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V3.7a.7.7 0 0 0-.7-.7H5.7zm10 0a.7.7 0 0 0-.7.7v16.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V3.7a.7.7 0 0 0-.7-.7h-2.6z"></path>
+                </svg>
+              </span>
+            </button>
+          } @else {
+            <button class="play-button" (click)="onPlay()">
+              <span class="icon-wrapper">
+                <svg data-encore-id="icon" role="img" aria-hidden="true" viewBox="0 0 24 24">
+                  <path fill="#000" d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606z">
+                  </path>
+                </svg>
+              </span>
+            </button>
+          } 
+          <h2 class="my-0 text-xl">{{s.name}}</h2>
+        </div>
+      </header>
+      <section class="content-layout">
+        <section #contentHeader class="header">
+          <div class="content flex gap-4 align-items-end h-full px-4 py-3 lg:pb-4">
+            <div class="image-wrapper" style="--size: clamp(96px, 15vw, 232px)">
+              <img [src]="s.photoUrl" alt="track image">
+              <div class="hover-content">
+                <i class="pi pi-pencil text-4xl"></i>
+                <span class="font-medium">Choose a photo</span>
+              </div>
+            </div>
+            <div class="flex flex-column md:gap-1 lg:gap-2 text-xs md:text-sm lg:text-base">
+              <span class="text-sm lg:text-base font-medium">Track</span>
+              <h1 class="my-0 text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold">{{s.name}}</h1>  
+              <div class="flex align-items-center gap-1 text-sm mt-2 md:mt-1 lg:mt-0">
+                <div class="image-wrapper rounded" style="--size: 18px">
+                  <img src="https://i.scdn.co/image/ab6761610000f178e8f01811498596bb1088e1d5" alt="">
+                </div>
+                <span class="font-bold">{{s.artist.displayName}}</span>
+                <span class="text-gray-100">•</span>
+                <span class="text-gray-100">{{s.name}}</span>
+                <span class="text-gray-100">•</span>
+                <span class="text-gray-100">{{s.duration | formatDuration}}</span>
+                <span class="text-gray-100">•</span>
+                <span class="text-gray-100">{{s.likesCount}}</span>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="track-content">
+          <div [style]="'background-color:' + randomColor()" class="background-overlay"></div>
+          <div class="flex align-items-center gap-3 md:gap-4 lg:gap-5 px-4 py-3 lg:py-4">
+            @if (state.playing && state.song?.songId === s.songId) {
+              <button class="play-button text-black-alpha-90" (click)="onPause()">
+                <span class="icon-wrapper">
+                  <svg data-encore-id="icon" role="img" aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="M5.7 3a.7.7 0 0 0-.7.7v16.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V3.7a.7.7 0 0 
+                      0-.7-.7H5.7zm10 0a.7.7 0 0 0-.7.7v16.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V3.7a.7.7 0 0 0-.7-.7h-2.6z">
+                    </path>
+                  </svg>
+                </span>
+              </button>
+            } @else {
+              <button class="play-button" (click)="onPlay()">
+                <span class="icon-wrapper">
+                  <svg data-encore-id="icon" role="img" aria-hidden="true" viewBox="0 0 24 24">
+                    <path fill="#000" d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606z">
+                    </path>
+                  </svg>
+                </span>
+              </button>
+            } 
+            @if (isLiked() && !isOwner()) {
+              <p-button [rounded]="true" icon="pi pi-check" (onClick)="toggleLike()"/>
+            } @else if (!isOwner()) {
+              <p-button [outlined]="true" [rounded]="true" icon="pi pi-plus" (onClick)="toggleLike()"/>
+            }
+          </div>
+        </section>
+      </section>
+    }
+  </div>
+</div>

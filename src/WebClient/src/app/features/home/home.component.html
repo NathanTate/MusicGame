@@ -1,4 +1,4 @@
-<div class="layout scrollable scrollbar-horizontal" (scroll)="onScroll($event)">
+<div class="layout scrollable scrollbar-vertical" (scroll)="onScroll($event)">
   <header class="header">
     <div class="h-full flex align-items-center gap-3 px-4">
       @for (filter of filterTypes; track $index) {
@@ -15,7 +15,7 @@
     <div class="grid-container-header">
       @for (song of songs()?.items; track $index) {
         @if ($index < 4) {
-          <app-card-mini [title]="song.name"/>
+          <app-card-mini [title]="song.name" [imgSrc]="song.photoUrl ?? ''" [link]="'/songs/' + song.songId "/>
         }
       }
     </div>
@@ -80,4 +80,5 @@
       </div>
     </section>
   </section>
+
 </div>

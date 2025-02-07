@@ -16,6 +16,7 @@ export class PhotoFormComponent {
   private readonly sanitizer = inject(DomSanitizer);
 
   public readonly photoUrl = model<string | undefined>('');
+  public readonly showMenu = input<boolean>(true);
   public readonly onDeleted = output<void>();
   public readonly onFileChanged = output<File>();
   public readonly imageControl = new FormControl(null);

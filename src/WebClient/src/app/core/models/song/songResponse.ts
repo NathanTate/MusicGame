@@ -11,6 +11,6 @@ export interface SongResponse {
   releaseDate: string;
   createdAt: string;
   genres: GenreResponse[];
-  photoUrl?: string | null;
+  photoUrl?: string;
   artist: ArtistResponse;
 }

@@ -13,8 +13,9 @@ using Application.Common.UserHelpers;
 using AutoMapper.QueryableExtensions;
 using Application.Models;
 using Application.Models.Queries;
-using System.Linq.Expressions;
 using Application.Models.Users;
+using Application.Services.Elastic;
+using Application.Models.Songs;
 
 namespace Application.Services;
 internal class PlaylistService : IPlaylistService
@@ -23,12 +24,57 @@ internal class PlaylistService : IPlaylistService
     private readonly IMapper _mapper;
     private readonly IFileHandler _fileHandler;
     private readonly IUserContext _userContext;
-    public PlaylistService(AppDbContext dbContext, IMapper mapper, IFileHandler fileHandler, IUserContext userContext)
+    private readonly PlaylistsElasticService _elasticService;
+    public PlaylistService(AppDbContext dbContext, IMapper mapper, IFileHandler fileHandler, IUserContext userContext, PlaylistsElasticService elasticService)
     {
         _dbContext = dbContext;
         _mapper = mapper;
         _fileHandler = fileHandler;
         _userContext = userContext;
+        _elasticService = elasticService;
+    }
+
+    public async Task<Result<bool>> ToggleLikeAsync(int playlistId, CancellationToken cancellationToken = default)
+    {
+        var currentUser = _userContext.GetCurrentUser();
+
+        if (currentUser is null)
+        {
+            return new ValidationError("User doesn't exist");
+        }
+
+        bool liked = false;
+        var like = await _dbContext.PlaylistLike.FindAsync([playlistId, currentUser.UserId], cancellationToken);
+
+        if (like is not null)
+        {
+            _dbContext.Remove(like);
+        }
+        else
+        {
+            var playlist = await _dbContext.Playlists.AsNoTracking().FirstOrDefaultAsync(x => x.PlaylistId == playlistId);
+
+            if (playlist is null)
+            {
+                return new ValidationError($"Can't add like to not existed playilist - {playlistId}");
+            }
+            if (playlist.UserId == currentUser.UserId)
+            {
+                return new ValidationError("You can't like your own playlists");
+            }
+
+            var playlistLike = new PlaylistLike
+            {
+                PlaylistId = playlistId,
+                UserId = currentUser.UserId
+            };
+
+            _dbContext.PlaylistLike.Add(playlistLike);
+            liked = true;
+        }
+
+        await _dbContext.SaveChangesAsync();
+        return Result.Ok(liked);
     }
 
     public async Task<Result<PlaylistResponse>> CreatePlaylistAsync(CancellationToken cancellationToken = default)
@@ -71,10 +117,31 @@ internal class PlaylistService : IPlaylistService
             return new NotFoundError($"Playlist with id {playlistId} cannot be found");
         }
 
+        List<int> songIds = playlist.Songs.Select(x => x.Song.SongId).ToList();
+
+        var songsLikes = _dbContext.SongLike
+            .AsNoTracking()
+            .Where(x => songIds.Contains(x.SongId))
+            .GroupBy(x => x.SongId)
+            .Select(x => new
+            {
+                SongId = x.Key,
+                LikesCount = x.Count(),
+            });
+
+        foreach (var item in songsLikes)
+        {
+            var matchingItem = playlist.Songs.Find(x => x.Song.SongId == item.SongId);
+            if (matchingItem is not null)
+            {
+                matchingItem.Song.LikesCount = item.LikesCount;
+            }
+        }
+
         return Result.Ok(playlist);
     }
 
-    public async Task<PagedList<PlaylistResponse>> GetPlaylistsAsync(PlaylistsQueryRequest query, CancellationToken cancellationToken = default)
+    public async Task<PagedList<PlaylistResponse>> GetPlaylistsAsync(PlaylistsQuery query, CancellationToken cancellationToken = default)
     {
         var userId = _userContext.GetCurrentUser()?.UserId;
 
@@ -82,20 +149,36 @@ internal class PlaylistService : IPlaylistService
             .AsNoTracking()
             .Where(x => (!x.IsPrivate || x.UserId == userId));
 
+        List<int> searchIds = new();
+
         if (!string.IsNullOrWhiteSpace(query.SearchTerm))
         {
-            playlistsQuery = playlistsQuery.Where(x =>
-                x.Name.ToLower().Contains(query.SearchTerm.ToLower()) ||
-                x.Description != null && x.Description.ToLower().Contains(query.SearchTerm.ToLower()));
+            var elasticQuery = new ElasticQuery
+            {
+                Page = query.Page,
+                PageSize = query.PageSize,
+                SearchTerm = query.SearchTerm
+            };
+
+            var result = await _elasticService.SearchAsync(elasticQuery, ElasticIndex.PlaylistsIndex);
+
+            if (result.IsFailed)
+            {
+                throw new ArgumentNullException(result.Errors.Select(x => x.Message).FirstOrDefault());
+            }
+
+            searchIds = result.Value.Select(x => Convert.ToInt32(x.Id)).ToList();
+
+            playlistsQuery = playlistsQuery.Where(x => searchIds.Contains(x.PlaylistId));
         }
 
         if (query.SortOrder == "desc")
         {
-            playlistsQuery = playlistsQuery.OrderByDescending(GetSortProperty(query));
+            playlistsQuery = playlistsQuery.OrderByDescending(query.GetSortProperty());
         }
         else
         {
-            playlistsQuery = playlistsQuery.OrderBy(GetSortProperty(query));
+            playlistsQuery = playlistsQuery.OrderBy(query.GetSortProperty());
         }
 
         var resultQuery = playlistsQuery.Select(x => new PlaylistResponse
@@ -112,7 +195,42 @@ internal class PlaylistService : IPlaylistService
             User = new ArtistResponse(x.User.Id, x.User.Email, x.User.DisplayName)
         });
 
-        return await PagedList<PlaylistResponse>.CreateAsync(resultQuery, query.Page, query.PageSize, cancellationToken); ;
+        var pagedList = await PagedList<PlaylistResponse>.CreateAsync(resultQuery, query.Page, query.PageSize, cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(query.SearchTerm))
+        {
+            var orderedItems = pagedList.Items.OrderBy(x => searchIds.IndexOf(x.PlaylistId)).ToList();
+
+            return new PagedList<PlaylistResponse>(orderedItems, pagedList.Page, pagedList.PageSize, pagedList.TotalCount);
+        }
+
+        return pagedList;
+    }
+
+    public async Task<PagedList<PlaylistResponse>> GetByIdsAsync(IEnumerable<int> ids, BaseQuery query, CancellationToken cancellationToken = default)
+    {
+        var userId = _userContext.GetCurrentUser()?.UserId;
+
+        var playlistsQuery = _dbContext.Playlists
+            .AsNoTracking()
+            .Where(x => (!x.IsPrivate || x.UserId == userId))
+            .Where(x => ids.Contains(x.PlaylistId));
+
+        var resultQuery = playlistsQuery.Select(x => new PlaylistResponse
+        {
+            PlaylistId = x.PlaylistId,
+            Name = x.Name,
+            Description = x.Description,
+            IsPrivate = x.IsPrivate,
+            TotalDuration = x.TotalDuration,
+            LikesCount = x.LikesCount,
+            SongsCount = x.Songs.Count,
+            CreatedAt = x.CreatedAt,
+            PhotoUrl = x.Photo == null ? null : x.Photo.URL,
+            User = new ArtistResponse(x.User.Id, x.User.Email, x.User.DisplayName)
+        });
+
+        return await PagedList<PlaylistResponse>.CreateAsync(resultQuery, query.Page, query.PageSize, cancellationToken);
     }
 
     public async Task<Result<PlaylistResponse>> UpdatePlaylistAsync(UpdatePlaylistRequest model, CancellationToken cancellationToken = default)
@@ -236,7 +354,7 @@ internal class PlaylistService : IPlaylistService
         var fileName = Path.GetFileName(playlist.Photo.URL);
         await _fileHandler.DeleteFileAsync(fileName, FileContainer.Photos, cancellationToken);
 
-        var photo = await _dbContext.Photos.FindAsync(playlist.Photo.PhotoId, cancellationToken);
+        var photo = await _dbContext.Photos.FindAsync([playlist.Photo.PhotoId], cancellationToken);
 
         if (photo is null)
         {
@@ -275,7 +393,8 @@ internal class PlaylistService : IPlaylistService
         .Select(x => new Song
         {
             SongId = x.SongId,
-            IsPrivate = x.IsPrivate
+            IsPrivate = x.IsPrivate,
+            Duration = x.Duration
         })
         .FirstOrDefaultAsync(x => x.SongId == model.SongId, cancellationToken);
 
@@ -289,7 +408,7 @@ internal class PlaylistService : IPlaylistService
             return new ValidationError($"Private songs cannot be added to playlists");
         }
 
-        var playlistSong = await _dbContext.PlaylistSongs
+        var playlistSong = await _dbContext.PlaylistSong
             .FirstOrDefaultAsync(x => x.SongId == model.SongId && x.PlaylistId == model.PlaylistId, cancellationToken);
 
         if (playlistSong is not null)
@@ -297,14 +416,16 @@ internal class PlaylistService : IPlaylistService
             return new ValidationError($"Song with id {model.SongId} is already in the playlist");
         }
 
+        var maxPosition = await _dbContext.PlaylistSong.Where(x => x.PlaylistId == model.PlaylistId).MaxAsync(x => (int?)x.Position);
+
         playlistSong = new PlaylistSong
         {
             PlaylistId = model.PlaylistId,
             SongId = model.SongId,
-            Position = model.Position,
+            Position = model.Position ?? maxPosition ?? 1,
         };
 
-        _dbContext.PlaylistSongs.Add(playlistSong);
+        _dbContext.PlaylistSong.Add(playlistSong);
         playlist.TotalDuration += song.Duration;
 
         await _dbContext.SaveChangesAsync();
@@ -321,7 +442,7 @@ internal class PlaylistService : IPlaylistService
             return new ValidationError("User doesn't exist");
         }
 
-        var playlistSong = await _dbContext.PlaylistSongs
+        var playlistSong = await _dbContext.PlaylistSong
             .Select(x => new PlaylistSong
             {
                 SongId = x.SongId,
@@ -334,7 +455,8 @@ internal class PlaylistService : IPlaylistService
                 Playlist = new Playlist
                 {
                     PlaylistId = x.PlaylistId,
-                    TotalDuration = x.Playlist.TotalDuration
+                    TotalDuration = x.Playlist.TotalDuration,
+                    UserId = x.Playlist.UserId
                 }
             })
             .FirstOrDefaultAsync(x => x.SongId == songId && x.PlaylistId == playlistId, cancellationToken);
@@ -349,7 +471,7 @@ internal class PlaylistService : IPlaylistService
             return new ForbiddenAccessError();
         }
 
-        _dbContext.PlaylistSongs.Remove(playlistSong);
+        _dbContext.PlaylistSong.Remove(playlistSong);
         playlistSong.Playlist.TotalDuration -= playlistSong.Song.Duration;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -366,7 +488,7 @@ internal class PlaylistService : IPlaylistService
             return new ValidationError("User doesn't exist");
         }
 
-        var playlistSong = await _dbContext.PlaylistSongs
+        var playlistSong = await _dbContext.PlaylistSong
             .Include(p => p.Playlist)
             .FirstOrDefaultAsync(x => x.SongId == model.SongId && x.PlaylistId == model.PlaylistId, cancellationToken);
 
@@ -393,21 +515,27 @@ internal class PlaylistService : IPlaylistService
         return !exists;
     }
 
+    public async Task<Result<bool>> IsLiked(int playlistId, CancellationToken cancellationToken = default)
+    {
+        var currentUser = _userContext.GetCurrentUser();
+
+        if (currentUser is null)
+        {
+            return new ValidationError("User doesn't exist");
+        }
+
+
+        var like = await _dbContext.PlaylistLike.AnyAsync(x => x.PlaylistId == playlistId && x.UserId == currentUser.UserId, cancellationToken);
+
+        return Result.Ok(like);
+    }
+
     private async Task<Playlist?> GetByIdAsync(int playlistId, string? userId, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Playlists
+            .Include(x => x.Photo)
             .Where(x => x.PlaylistId == playlistId && (!x.IsPrivate || x.UserId == userId))
             .FirstOrDefaultAsync(cancellationToken);
     }
-
-    private static Expression<Func<Playlist, object>> GetSortProperty(PlaylistsQueryRequest query) =>
-        query.SortColumn?.ToLower() switch
-        {
-            "name" => playlist => playlist.Name,
-            "likes" => playlist => playlist.LikesCount,
-            "duration" => playlist => playlist.TotalDuration,
-            "songsCount" => playlist => playlist.Songs.Count,
-            _ => playlist => playlist.PlaylistId
-        };
 
 }

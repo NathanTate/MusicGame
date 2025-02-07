@@ -8,11 +8,15 @@ import { SongListResponse } from "../models/song/songListResponse";
 import { Subject, tap } from "rxjs";
 import { CreateSongRequest } from "../models/song/createSongRequest";
 import { UpdateSongRequest } from "../models/song/updateSongRequest";
+import { toFormData } from "../../shared/helpers/form-data-converter";
 
 @Injectable({
   providedIn: 'root'
 })
 export class SongService {
+  pipe(arg0: any) {
+    throw new Error("Method not implemented.");
+  }
   private readonly _baseUrl = environment.apiUrl + 'songs/'
   public readonly songsQuery = new SongsQuery();
   public readonly songUpdated$ = new Subject<number>();
@@ -29,13 +33,13 @@ export class SongService {
   }
 
   createSong(model: CreateSongRequest) {
-    const httpHeaders = new HttpHeaders().set('Content-Type', 'multipart/form-data');
+    const formData = toFormData(model);
 
-    return this.http.post<SongResponse>(this._baseUrl, model, { headers: httpHeaders });
+    return this.http.post<SongResponse>(this._baseUrl, formData);
   }
 
   updateSong(model: UpdateSongRequest) {
-    return this.http.post<SongResponse>(this._baseUrl, model).pipe(tap(() => {
+    return this.http.put<SongResponse>(this._baseUrl, model).pipe(tap(() => {
       this.songUpdated$.next(model.songId);
     }));
   }
@@ -44,12 +48,27 @@ export class SongService {
     return this.http.delete<void>(this._baseUrl + songId);
   }
 
-  uplaodSongPhoto(songId: number, photo: File) {
-    return this.http.patch<SongResponse>(this._baseUrl + songId + '/photo', photo);
+  upsertPhoto(songId: number, photo: File) {
+    const formData = new FormData();
+    formData.append('photo', photo);
+
+    return this.http.patch<SongResponse>(this._baseUrl + songId + '/photo', formData).pipe(tap(() => {
+      this.songUpdated$.next(songId)
+    }));
   }
 
-  deleteSongPhoto(songId: number) {
-    return this.http.delete<void>(this._baseUrl + songId + '/photo');
+  deletePhoto(songId: number) {
+    return this.http.delete<void>(this._baseUrl + songId + '/photo').pipe(tap(() => {
+      this.songUpdated$.next(songId)
+    }));;
+  }
+
+  toggleLike(songId: number) {
+    return this.http.post<boolean>(this._baseUrl + `${songId}/like`, null);
+  }
+
+  isLiked(songId: number) {
+    return this.http.get<boolean>(this._baseUrl + `${songId}/is-liked`);
   }
 
   isNameAvailable(name: string) {

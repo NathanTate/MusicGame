@@ -1,7 +1,14 @@
+import { PlaylistResponse } from "./playlist/playlistResponse";
+import { SongResponse } from "./song/songResponse";
+
 export interface AudioState {
+  song?: SongResponse;
+  playlist?: PlaylistResponse;
+  repeat: boolean;
+  shuffle: boolean;
   playing: boolean;
   ended: boolean;
-  redableCurrentTime: string;
+  readableCurrentTime: string;
   readableDuration: string;
   duration: number;
   currentTime: number;

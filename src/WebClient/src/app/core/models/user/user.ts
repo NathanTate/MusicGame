@@ -1,4 +1,5 @@
-import { PhotoResponse } from "./photoResponse";
+import { PhotoResponse } from "../photoResponse";
+
 
 export interface User {
   userId: string;

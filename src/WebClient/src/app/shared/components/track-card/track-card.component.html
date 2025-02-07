@@ -1,8 +1,8 @@
 @let track = song();
 
-<article [attr.aria-labelledby]="labelById()" class="x-card" [routerLink]="['/songs', track.songId]">
+<article [attr.aria-labelledby]="labelById()" class="x-card" [routerLink]="['/track', track.songId]">
   <div class="image-wrapper">
-    <div class="image-preview">
+    <div class="image-preview" [class.rounded]="rounded()">
       @if (track.photoUrl) {
         <img [src]="track.photoUrl" alt="song image">
       } @else {
@@ -15,7 +15,7 @@
       }
     </div>
     <div>
-      @if (isPlaying()) {
+      @if (isPlaying$ | async; as playing) {
         <button class="play-button" (click)="onPause($event)">
           <span class="icon-wrapper">
             <svg data-encore-id="icon" role="img" aria-hidden="true" viewBox="0 0 24 24">
@@ -39,7 +39,7 @@
     <div class="x-card-info">
       @if (showTitle()) {
         <p>
-          <a [id]="labelById()" class="x-lines-limit link-ahead" style="--max-lines: 2" [routerLink]="['/songs', track.songId]">
+          <a [id]="labelById()" class="x-lines-limit link-ahead" style="--max-lines: 2" [routerLink]="['/track', track.songId]">
             {{track.name}}
           </a>
         </p>

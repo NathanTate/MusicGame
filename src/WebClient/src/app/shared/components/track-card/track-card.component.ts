@@ -1,43 +1,52 @@
-import { Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
+import { Component, computed, HostListener, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { SongResponse } from '../../../core/models/song/songResponse';
-import { PlaybackState, PlaybackStateService } from '../../../core/services/playbackState.service';
 import { AudioService } from '../../../core/services/audio.service';
-import { take } from 'rxjs';
+import { distinctUntilChanged, map, take } from 'rxjs';
+import { AudioState } from '../../../core/models/audioState';
+import { AsyncPipe } from '@angular/common';
+import { isNullOrUndefined } from 'is-what';
+import { SongContextService } from '../../../core/services/context-menu.service';
 
 @Component({
   selector: 'app-track-card',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, AsyncPipe],
   templateUrl: './track-card.component.html',
   styleUrl: './track-card.component.scss'
 })
 export class TrackCardComponent {
-  private readonly playbackStateService = inject(PlaybackStateService);
   private readonly audioService = inject(AudioService);
+  private readonly songContextService = inject(SongContextService);
 
   showTitle = input<boolean>(true);
+  rounded = input<boolean>(false);
   song = input.required<SongResponse>();
   labelById = computed(() => `x-card-title-${this.song().songId}`)
-  isPlaying = signal<boolean>(false);
-  playbackState = signal<PlaybackState | undefined>(undefined);
+  public readonly isPlaying$ = this.audioService.state$.pipe(map((state: AudioState) => {
+    return state.playing && state.song?.songId === this.song().songId && isNullOrUndefined(state.playlist);
+  }), distinctUntilChanged())
+
+  @HostListener('contextmenu', ['$event'])
+  contextMenu(event: MouseEvent) {
+    this.onContextMenu(event, this.song());
+  }
+
+  onContextMenu(event: MouseEvent, song: SongResponse) {
+    this.songContextService.open(event, song);
+  }
 
   OnPlay(e: Event) {
     e.stopPropagation();
-    this.playbackStateService.setCurrentPlaylist(undefined);
-    this.playbackStateService.state$.pipe(take(1)).subscribe((state: PlaybackState) => this.playbackState.set(state));
-    if (this.playbackState()?.song?.songId === this.song().songId) {
-      this.audioService.play();
-    } else {
-      this.audioService.playStream(this.song(), true).subscribe();
-      this.playbackStateService.setCurrentSong(this.song());
-    }
-    this.isPlaying.set(true)
+    this.audioService.state$.pipe(take(1)).subscribe((state: AudioState) => {
+      state.song?.songId === this.song().songId && isNullOrUndefined(state.playlist)
+        ? this.audioService.play()
+        : this.audioService.playStream(this.song(), undefined, true).subscribe();
+    })
   }
 
   onPause(e: Event) {
     e.stopPropagation();
     this.audioService.pause();
-    this.isPlaying.set(false);
   }
 }

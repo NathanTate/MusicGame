@@ -5,13 +5,13 @@
     </a>
   </ng-template>
   <ng-template pTemplate="center">
-    <div class="flex align-items-center gap-3">
+    <form [formGroup]="form" (ngSubmit)="performSearch()" class="flex align-items-center gap-3">
       <p-button routerLink="/" icon="pi pi-home" [rounded]="true" size="large" styleClass="surface-card border-1 surface-border text-primary p-3"/>
       <p-iconField iconPosition="left">
         <p-inputIcon styleClass="pi pi-search"/>
-        <input pInputText type="search" />
+        <input pInputText type="search" formControlName="searchTerm"/>
       </p-iconField>
-    </div>
+    </form>
   </ng-template>
   <ng-template pTemplate="end">
     @if (authService.isAuthenticated()) {

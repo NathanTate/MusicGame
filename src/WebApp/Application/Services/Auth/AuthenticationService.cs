@@ -15,7 +15,6 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.EntityFrameworkCore;
 
 namespace Application.Services.Auth;
 internal class AuthenticationService : IAuthenticationService

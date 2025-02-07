@@ -34,7 +34,7 @@ export class DraggableBarComponent {
   }
 
   updateBar = computed(() => {
-    if (!this.progressBar) return;
+    if (!this.progressBar || !this.maxValue()) return;
     const percentage = this.value() === 0 ? 0 : this.value() / this.maxValue() * 100;
     this.progressBar.style.setProperty('--progress-width', `${percentage}%`);
   })

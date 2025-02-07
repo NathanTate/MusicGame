@@ -36,7 +36,7 @@ public class SongController : BaseApiController
 
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> GetSongs([FromQuery] SongsQueryRequest query)
+    public async Task<IActionResult> GetSongs([FromQuery] SongsQuery query)
     {
         return Ok(await _songService.GetSongsAsync(query, HttpContext.RequestAborted));
     }
@@ -95,5 +95,21 @@ public class SongController : BaseApiController
     public async Task<IActionResult> IsSongNameAvailable(NameRequest model)
     {
         return Ok(await _songService.IsSongNameAvailableAsync(model.name, HttpContext.RequestAborted));
+    }
+
+    [HttpPost("{songId}/like")]
+    public async Task<IActionResult> ToggleLike(int songId)
+    {
+        Result<bool> result = await _songService.ToggleLikeAsync(songId, HttpContext.RequestAborted);
+
+        return result.ToHttpResponse(HttpContext);
+    }
+
+    [HttpGet("{songId}/is-liked")]
+    public async Task<IActionResult> IsLiked(int songId)
+    {
+        Result<bool> result = await _songService.IsLiked(songId, HttpContext.RequestAborted);
+
+        return result.ToHttpResponse(HttpContext);
     }
 }

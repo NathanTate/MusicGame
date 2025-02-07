@@ -48,7 +48,7 @@ export class LoginComponent implements OnInit {
     }
 
     this.authService.login(this.form.value).pipe(catchError(error => {
-      this.error.set(error.message);
+      this.error.set(error.error.message || error.error.errors ? error.error.errors.ValidationError[0] : 'Unknown Error');
       return throwError(() => error);
     })).subscribe(() => {
       this.error.set('')

@@ -1,5 +1,6 @@
 <div class="image-preview">
-  <input class="visually-hidden" #inputEl [formControl]="imageControl" type="file" accept=".jpg, .webp, .png" (change)="onImageChanged($event)">
+  <label for="photo" class="cursor-pointer absolute top-0 left-0 w-full h-full z-1 opacity-0"></label>
+  <input id="photo" class="visually-hidden" #inputEl [formControl]="imageControl" type="file" accept=".jpg, .webp, .png" (change)="onImageChanged($event)">
   @if (photoUrl()) {
     <img [src]="photoUrl()" alt="song image">
   } @else {
@@ -10,10 +11,16 @@
       </svg>
     </div>
   }
-  <div class="menu-wrapper">
-    <button (click)="menu.toggle($event)" class="menu-button">
-      <span class="pi pi-ellipsis-h"></span>
-    </button>
-    <p-menu #menu [model]="items" [popup]="true" appendTo="body"></p-menu>
+  <div class="hover-content">
+    <i class="pi pi-pencil text-4xl"></i>
+    <span class="font-medium">Choose a photo</span>
   </div>
+  @if (showMenu()) {
+    <div class="menu-wrapper z-2">
+      <button type="button" (click)="menu.toggle($event)" class="menu-button">
+        <span class="pi pi-ellipsis-h"></span>
+      </button>
+      <p-menu #menu [model]="items" [popup]="true" appendTo="body"></p-menu>
+    </div>
+  }
 </div>

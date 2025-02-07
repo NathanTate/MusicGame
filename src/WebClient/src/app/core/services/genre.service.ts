@@ -14,6 +14,7 @@ import { UpdateGenreRequest } from "../models/genre/updateGenreRequest";
 export class GenreService {
   private readonly _baseUrl = environment.apiUrl + 'genres/';
   private readonly http = inject(HttpClient);
+  public readonly genresQuery = new GenresQuery();
 
   createGenre(model: CreateGenreRequest) {
     return this.http.post<GenreResponse>(this._baseUrl, model);

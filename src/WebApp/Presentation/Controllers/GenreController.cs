@@ -37,7 +37,7 @@ public class GenreController : BaseApiController
 
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> GetGenres([FromQuery] GenresQueryRequest query)
+    public async Task<IActionResult> GetGenres([FromQuery] GenresQuery query)
     {
         return Ok(await _genreService.GetGenresAsync(query, HttpContext.RequestAborted));
     }

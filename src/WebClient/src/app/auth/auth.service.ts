@@ -9,7 +9,7 @@ import { tap } from "rxjs";
 import { AuthData } from "./models/authData";
 import { Router } from "@angular/router";
 import { AudioService } from "../core/services/audio.service";
-import { PlaybackStateService } from "../core/services/playbackState.service";
+import { ArtistResponse } from "../core/models/user/artistResponse";
 
 @Injectable({
   providedIn: 'root'
@@ -17,12 +17,11 @@ import { PlaybackStateService } from "../core/services/playbackState.service";
 export class AuthService {
   private _baseUrl = environment.apiUrl + 'account/'
   private _authData = signal<AuthData | null>(null);
-  authData = this._authData.asReadonly();
+  public authData = this._authData.asReadonly();
 
   private http = inject(HttpClient);
   private router = inject(Router);
   private audioService = inject(AudioService);
-  private playbackStateService = inject(PlaybackStateService);
 
   constructor() {
     const authDataString = localStorage.getItem("authData");
@@ -39,7 +38,7 @@ export class AuthService {
   }
 
   register(model: Register) {
-    return this.http.post<string>(this._baseUrl + 'register', model)
+    return this.http.post(this._baseUrl + 'register', model, { responseType: 'text' })
   }
 
   login(login: Login) {
@@ -53,7 +52,6 @@ export class AuthService {
   logout() {
     this._authData.set(null);
     this.audioService.stop();
-    this.playbackStateService.resetState();
     localStorage.removeItem('authData');
     this.router.navigate(['/login']);
   }
@@ -90,5 +88,15 @@ export class AuthService {
 
   isAuthenticated() {
     return this.authData() && Date.now() < new Date(this.authData()!.tokens?.refreshToken?.expiresAt)?.getTime();
+  }
+
+  authDataToArtist(data: AuthData) {
+    const artist: ArtistResponse = {
+      userId: data.userId,
+      email: data.email,
+      displayName: data.username
+    }
+
+    return artist;
   }
 }

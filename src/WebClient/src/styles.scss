@@ -72,14 +72,14 @@ ol {
   }
 
   .is-invalid {
-    border-color: red;
+    border-color: var(--red-500);
   }
 }
 
 .message-block {
   .error-message {
     display: none;
-    color: red;
+    color: var(--red-500);
   }
 
   .error-message:first-child {
@@ -102,22 +102,33 @@ ol {
 }
 
 .scrollable {
-  overflow-y: auto;
+  overflow: auto;
 }
 
 .scrollbar-horizontal {
+  overflow-x: auto;
+  overflow-y: hidden;
+  width: 100%;
+}
+
+.scrollbar-vertical {
+  overflow-y: auto;
+  overflow-x: hidden;
   height: 100%;
 }
 
-.scrollbar-horizontal::-webkit-scrollbar-track {
+.scrollbar-horizontal::-webkit-scrollbar-track,
+.scrollbar-vertical::-webkit-scrollbar-track {
   background-color: var(--surface-ground);
 }
 
-.scrollbar-horizontal::-webkit-scrollbar {
+.scrollbar-horizontal::-webkit-scrollbar,
+.scrollbar-vertical::-webkit-scrollbar {
   width: $scrollbar-width;
 }
 
-.scrollbar-horizontal::-webkit-scrollbar-thumb {
+.scrollbar-horizontal::-webkit-scrollbar-thumb,
+.scrollbar-vertical::-webkit-scrollbar-thumb {
   background-color: var(--surface-200);
   border-radius: 4px;
 }

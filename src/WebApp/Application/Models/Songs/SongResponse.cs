@@ -15,4 +15,5 @@ public class SongResponse
     public List<GenreResponse> Genres { get; set; } = [];
     public string? PhotoUrl { get; set; }
     public ArtistResponse Artist { get; set; } = null!;
+    public string? Lyrics { get; set; }
 }
