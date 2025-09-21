@@ -15,6 +15,9 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using AutoMapper;
+using Application.Services.Elastic;
+using Application.Models.Elastic;
 
 namespace Application.Services.Auth;
 internal class AuthenticationService : IAuthenticationService
@@ -23,12 +26,17 @@ internal class AuthenticationService : IAuthenticationService
     private readonly JwtOptions _jwtOptions;
     private readonly IEmailSender _emailSender;
     private readonly ILogger<AuthenticationService> _logger;
-    public AuthenticationService(UserManager<User> userManager, ILogger<AuthenticationService> logger, IOptions<JwtOptions> jwtOptions, IEmailSender emailSender)
+    private readonly IMapper _mapper;
+    private readonly UsersElasticService _elasticService;
+    public AuthenticationService(UserManager<User> userManager, ILogger<AuthenticationService> logger, IOptions<JwtOptions> jwtOptions,
+        IEmailSender emailSender, IMapper mapper, UsersElasticService elasticService)
     {
         _userManager = userManager;
         _jwtOptions = jwtOptions.Value;
         _emailSender = emailSender;
         _logger = logger;
+        _mapper = mapper;
+        _elasticService = elasticService;
     }
 
     public async Task<Result<string>> RegisterAsync(RegisterRequest model, CancellationToken cancellationToken = default)
@@ -188,6 +196,8 @@ internal class AuthenticationService : IAuthenticationService
         {
             return ResultHelper.ErrorsToResult(result.Errors);
         }
+
+        await _elasticService.AddOrUpdateAsync(_mapper.Map<UserDoc>(user), ElasticIndex.UsersIndex, cancellationToken);
 
         return Result.Ok();
     }

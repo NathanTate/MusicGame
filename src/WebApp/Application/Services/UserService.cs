@@ -49,7 +49,7 @@ internal class UserService : IUserService
                 SearchTerm = query.SearchTerm
             };
 
-            var result = await _elasticService.SearchAsync(elasticQuery, ElasticIndex.UsersIndex);
+            var result = await _elasticService.SearchAsync(elasticQuery, ElasticIndex.UsersIndex, cancellationToken);
 
             if (result.IsFailed)
             {
@@ -142,7 +142,7 @@ internal class UserService : IUserService
                 SearchTerm = query.SearchTerm
             };
 
-            var result = await _elasticService.SearchAsync(elasticQuery, ElasticIndex.PlaylistsIndex);
+            var result = await _elasticService.SearchAsync(elasticQuery, ElasticIndex.PlaylistsIndex, cancellationToken);
 
             if (result.IsFailed)
             {
@@ -256,7 +256,7 @@ internal class UserService : IUserService
                 SearchTerm = query.SearchTerm
             };
 
-            var result = await _elasticService.SearchAsync(elasticQuery, ElasticIndex.SongsIndex);
+            var result = await _elasticService.SearchAsync(elasticQuery, ElasticIndex.SongsIndex, cancellationToken);
 
             if (result.IsFailed)
             {

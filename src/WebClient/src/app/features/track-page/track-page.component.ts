@@ -8,6 +8,9 @@ import { CommonModule } from '@angular/common';
 import { Button } from 'primeng/button';
 import { FormatDurationPipe } from '../../shared/pipes/format-duration.pipe';
 import { AuthService } from '../../auth/auth.service';
+import { take } from 'rxjs';
+import { AudioState } from '../../core/models/audioState';
+import { isNullOrUndefined } from 'is-what';
 
 @Component({
   selector: 'app-track-page',
@@ -24,6 +27,7 @@ export class TrackPageComponent implements OnInit {
   private readonly authService = inject(AuthService);
 
   public readonly song = signal<SongResponse | null>(null);
+  public readonly lyrics = signal<Lyrics[]>([]);
   public readonly state$ = this.audioService.state$;
   contentHeaderEl = viewChild.required<ElementRef<HTMLElement>>('contentHeader');
   animationFrameRequested = false;
@@ -42,9 +46,14 @@ export class TrackPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.registerChanges();
+  }
+
+  registerChanges() {
     this.activatedRoute.data.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((data) => {
       this.song.set(data['song']);
       const songItem = data['song'];
+      this.lyrics.set(this.splitLyrics(songItem.lyrics));
       if (songItem && songItem.artist.email === this.authService.authData()?.email) {
         this.isOwner.set(true);
       } else if (songItem) {
@@ -52,6 +61,14 @@ export class TrackPageComponent implements OnInit {
       }
       this.randomColor.set(this.randomColors[Math.floor(Math.random() * this.randomColors.length)]);
     })
+
+    this.songService.songUpdated$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((song: SongResponse) => {
+        if (this.song()?.songId === song.songId) {
+          this.song.set(song);
+        }
+      })
   }
 
   toggleLike() {
@@ -59,7 +76,11 @@ export class TrackPageComponent implements OnInit {
   }
 
   onPlay() {
-    this.audioService.play();
+    this.audioService.state$.pipe(take(1)).subscribe((state: AudioState) => {
+      state.song?.songId === this.song()!.songId && isNullOrUndefined(state.playlist)
+        ? this.audioService.play()
+        : this.audioService.playStream(this.song()!, undefined, true).subscribe();
+    })
   }
 
   onPause() {
@@ -77,6 +98,31 @@ export class TrackPageComponent implements OnInit {
     } else {
       this.animationFrameRequested = true;
     }
+  }
+
+  splitLyrics(text: string) {
+    if (isNullOrUndefined(text) || text.length === 0) {
+      return [];
+    }
+
+    const matches = text.match(/\[[^\]]*\]|[^[\]]+/g);
+    let lyrics: Lyrics[] = [];
+    let currentLyrics: Lyrics | null = null;
+
+    if (matches) {
+      matches.forEach((part) => {
+        if (part.startsWith("[")) {
+          if (currentLyrics) lyrics.push(currentLyrics);
+          currentLyrics = { title: part.slice(1, -1), chores: "" };
+        } else if (currentLyrics) {
+          currentLyrics.chores = part;
+        }
+      });
+    }
+
+    if (currentLyrics) lyrics.push(currentLyrics);
+
+    return lyrics;
   }
 
   updateStylesOnScroll(element: HTMLElement) {
@@ -102,3 +148,9 @@ export class TrackPageComponent implements OnInit {
   }
 
 }
+
+interface Lyrics {
+  title: string,
+  chores: string
+}
+

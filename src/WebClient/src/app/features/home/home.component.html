@@ -19,7 +19,7 @@
         }
       }
     </div>
-    <section class="content-section">
+    <section class="content-section" id="">
       <div>
         <div class="flex justify-content-between align-items-center">
           <div>
@@ -40,11 +40,17 @@
           <div>
             <h2 class="text-lg md:text-2xl">Recommended today</h2>
           </div>
-          <p-button label="Show all" [link]="true" styleClass="text-sm md:text-base"></p-button>
+          <a routerLink="/show-all" label="Show all" class="text-sm md:text-base">Show All</a>
         </div>
       </div>
       <div class="grid-container">
-        @for (song of songs()?.items; track song.songId) {
+        @for (song of songs()?.items; track song.songId + song.name) {
+          <app-track-card [song]="song"/>
+        }
+        @for (song of songs()?.items; track song.songId + song.name) {
+          <app-track-card [song]="song"/>
+        }
+        @for (song of songs()?.items; track song.songId + song.name) {
           <app-track-card [song]="song"/>
         }
       </div>
@@ -59,7 +65,7 @@
         </div>
       </div>
       <div class="grid-container">
-        @for (song of songs()?.items; track song.songId) {
+        @for (song of songs()?.items; track song.songId + song.name) {
           <app-track-card [song]="song"/>
         }
       </div>
@@ -74,7 +80,7 @@
         </div>
       </div>
       <div class="grid-container">
-        @for (song of songs()?.items; track song.songId) {
+        @for (song of songs()?.items; track song.songId + song.name) {
           <app-track-card [song]="song"/>
         }
       </div>

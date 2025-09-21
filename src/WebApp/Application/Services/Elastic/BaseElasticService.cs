@@ -33,7 +33,7 @@ public abstract class BaseElasticService<T> where T : BaseDoc, new()
         var indexName = GetIndexName(index);
 
         var response = await _client.IndexAsync(item, x => x.Index(indexName).OpType(OpType.Index).Id(item.Id), cancellationToken);
-    
+
         return response.IsValidResponse;
     }
 
@@ -49,17 +49,16 @@ public abstract class BaseElasticService<T> where T : BaseDoc, new()
         return response.IsValidResponse;
     }
 
-    public virtual async Task<bool> Remove(string key, ElasticIndex index)
+    public virtual async Task<bool> Remove(string key, ElasticIndex index, CancellationToken cancellationToken = default)
     {
         var indexName = GetIndexName(index);
 
-        var response = await _client.DeleteByQueryAsync<T>(
-            d => d.Indices(indexName));
+        var response = await _client.DeleteAsync(new DeleteRequestDescriptor<T>(indexName, key), cancellationToken);
 
         return response.IsValidResponse;
     }
 
-    public virtual async Task<Result<List<T>>> SearchAsync(ElasticQuery query, ElasticIndex index)
+    public virtual async Task<Result<List<T>>> SearchAsync(ElasticQuery query, ElasticIndex index, CancellationToken cancellationToken = default)
     {
         var indexName = GetIndexName(index);
 
@@ -68,7 +67,7 @@ public abstract class BaseElasticService<T> where T : BaseDoc, new()
             From = (query.Page - 1) * query.PageSize,
             Size = query.PageSize,
             Query = new T().BuildQuery(query)
-        });
+        }, cancellationToken);
 
         if (!searchResponse.IsValidResponse)
         {

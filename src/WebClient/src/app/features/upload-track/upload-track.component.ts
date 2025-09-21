@@ -72,7 +72,8 @@ export class UploadTrackComponent implements OnInit {
 
   initForm() {
     this.form = this.fb.group({
-      name: [null, [Validators.required, Validators.maxLength(100), noWhiteSpacesValidator()]],
+      name: [null, [Validators.required, Validators.minLength(2), Validators.maxLength(100), noWhiteSpacesValidator()]],
+      artistName: [null, Validators.required, Validators.minLength(2), Validators.maxLength(100), noWhiteSpacesValidator()],
       duration: [null, [Validators.required]],
       releaseDate: [null, [Validators.required, noWhiteSpacesValidator()]],
       songFile: [null, Validators.required],
@@ -143,5 +144,9 @@ export class UploadTrackComponent implements OnInit {
 
   get isPrivate() {
     return this.form.controls['isPrivate'];
+  }
+
+  get artistName() {
+    return this.form.controls['artistName'];
   }
 }

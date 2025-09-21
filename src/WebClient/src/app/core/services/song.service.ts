@@ -5,7 +5,7 @@ import { SongResponse } from "../models/song/songResponse";
 import { SongsQuery } from "../models/queries/songsQuery";
 import { generateHttpParams } from "../../shared/helpers/httpParamsHelper";
 import { SongListResponse } from "../models/song/songListResponse";
-import { Subject, tap } from "rxjs";
+import { Subject, switchMap, tap } from "rxjs";
 import { CreateSongRequest } from "../models/song/createSongRequest";
 import { UpdateSongRequest } from "../models/song/updateSongRequest";
 import { toFormData } from "../../shared/helpers/form-data-converter";
@@ -19,7 +19,11 @@ export class SongService {
   }
   private readonly _baseUrl = environment.apiUrl + 'songs/'
   public readonly songsQuery = new SongsQuery();
-  public readonly songUpdated$ = new Subject<number>();
+  private readonly songUpdated = new Subject<number>();
+  public readonly songUpdated$ = this.songUpdated
+    .pipe(switchMap((songId: number) => {
+      return this.getSong(songId);
+    }))
 
   private readonly http = inject(HttpClient);
 
@@ -40,7 +44,7 @@ export class SongService {
 
   updateSong(model: UpdateSongRequest) {
     return this.http.put<SongResponse>(this._baseUrl, model).pipe(tap(() => {
-      this.songUpdated$.next(model.songId);
+      this.songUpdated.next(model.songId);
     }));
   }
 
@@ -53,13 +57,13 @@ export class SongService {
     formData.append('photo', photo);
 
     return this.http.patch<SongResponse>(this._baseUrl + songId + '/photo', formData).pipe(tap(() => {
-      this.songUpdated$.next(songId)
+      this.songUpdated.next(songId)
     }));
   }
 
   deletePhoto(songId: number) {
     return this.http.delete<void>(this._baseUrl + songId + '/photo').pipe(tap(() => {
-      this.songUpdated$.next(songId)
+      this.songUpdated.next(songId)
     }));;
   }
 

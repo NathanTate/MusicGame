@@ -91,7 +91,7 @@ public class SearchController : BaseApiController
 
         var songs = await _songService.GetByIdsAsync(songIds.Select(x => Convert.ToInt32(x.Id)), new BaseQuery() { Page = query.Page, PageSize = query.SongsPageSize }, cancellationToken).ConfigureAwait(false);
         var playlists = await _playlistService.GetByIdsAsync(playlistIds.Select(x => Convert.ToInt32(x.Id)), new BaseQuery() { Page = query.Page, PageSize = query.SongsPageSize }, cancellationToken).ConfigureAwait(false);
-        var users = await _userService.GetByIdsAsync(userIds.Select(x => x.Id), new BaseQuery() { Page = query.Page, PageSize = query.SongsPageSize }, cancellationToken).ConfigureAwait(false);
+        var users = await _userService.GetByIdsAsync(userIds.Select(x => x.Id!), new BaseQuery() { Page = query.Page, PageSize = query.SongsPageSize }, cancellationToken).ConfigureAwait(false);
         var genres = await _genreService.GetByIdsAsync(genreIds.Select(x => Convert.ToInt32(x.Id)), new GenresQuery() { Page = query.Page, PageSize = query.SongsPageSize }, cancellationToken).ConfigureAwait(false);
 
 

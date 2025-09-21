@@ -5,6 +5,7 @@ public class Song : ISoftDeletable
 {
     public int SongId { get; set; }
     public string Name { get; set; } = null!;
+    public string ArtistName { get; set; } = null!;
     public string Url { get; set; } = null!;
     public int LikesCount { get; set; } = default;
     public int Duration { get; set; }

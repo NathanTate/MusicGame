@@ -1,0 +1,17 @@
+@import '../../../variables';
+
+.show-all {
+  padding: 1rem;
+}
+
+.grid-container {
+  --rows-count: 1;
+  $min-card-size: 160px;
+
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax($min-card-size, 1fr));
+  grid-template-rows: repeat(var(--rows-count), minmax(0, 1fr));
+  grid-auto-rows: 0;
+  margin-inline: -$global-card-padding;
+  overflow: hidden;
+}

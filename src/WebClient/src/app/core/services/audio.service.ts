@@ -1,5 +1,5 @@
 import { inject, Injectable } from "@angular/core";
-import { BehaviorSubject, Observable, Subject, takeUntil, tap, throttleTime } from "rxjs";
+import { BehaviorSubject, EMPTY, Observable, Subject, switchMap, takeUntil, tap, throttleTime } from "rxjs";
 import { AudioState } from "../models/audioState";
 import { SongResponse } from "../models/song/songResponse";
 import { PlaylistResponse } from "../models/playlist/playlistResponse";
@@ -52,6 +52,13 @@ export class AudioService {
 
   playStream(song: SongResponse, playlist?: PlaylistResponse, play: boolean = true) {
     this.stop();
+    this.songService.songUpdated$.pipe(takeUntil(this.stop$))
+      .subscribe((song: SongResponse) => {
+        if (song.songId === this.state.song?.songId) {
+          this.state.song = song;
+        }
+      })
+
     return this.streamObservable(song, playlist, play).pipe(takeUntil(this.stop$));
   }
 

@@ -38,7 +38,7 @@
             </div>
             <div class="flex flex-column md:gap-1 lg:gap-2 text-xs md:text-sm lg:text-base">
               <span class="text-sm lg:text-base font-medium">Track</span>
-              <h1 class="my-0 text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold">{{s.name}}</h1>  
+              <h1 class="my-0 text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold">{{s.name}}</h1>  
               <div class="flex align-items-center gap-1 text-sm mt-2 md:mt-1 lg:mt-0">
                 <div class="image-wrapper rounded" style="--size: 18px">
                   <img src="https://i.scdn.co/image/ab6761610000f178e8f01811498596bb1088e1d5" alt="">
@@ -81,6 +81,12 @@
               <p-button [rounded]="true" icon="pi pi-check" (onClick)="toggleLike()"/>
             } @else if (!isOwner()) {
               <p-button [outlined]="true" [rounded]="true" icon="pi pi-plus" (onClick)="toggleLike()"/>
+            }
+          </div>
+          <div class="pt-2 px-4 pb-4">
+            @for(lyric of lyrics(); track $index) {
+              <h4 class="font-medium font-sm mb-2 mt-4">{{lyric.title}}</h4>
+              <p class="text-sm chores">{{lyric.chores}}</p>
             }
           </div>
         </section>

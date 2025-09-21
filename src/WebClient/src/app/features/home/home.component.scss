@@ -43,6 +43,22 @@
   }
 }
 
+.content-section {
+
+  p-button,
+  a {
+    display: none;
+  }
+
+  &[overflow] {
+
+    p-button,
+    a {
+      display: block;
+    }
+  }
+}
+
 .grid-container {
   --rows-count: 1;
   $min-card-size: 160px;

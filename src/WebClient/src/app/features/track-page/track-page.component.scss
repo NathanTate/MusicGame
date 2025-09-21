@@ -11,6 +11,11 @@
   overflow-x: hidden;
   position: relative;
 
+  .chores {
+    max-width: 40ch;
+    text-wrap: balance;
+  }
+
   .main-header {
     position: absolute;
     top: 0;

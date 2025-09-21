@@ -2,8 +2,10 @@ using Application;
 using Application.Services.Elastic;
 using Domain.Enums;
 using Infrastructure;
+using Infrastructure.Context;
 using Infrastructure.Seed;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Presentation.Extensions;
 using Presentation.Middleware;
 
@@ -66,6 +68,9 @@ async Task SeedData()
             var playlistsElasticService = scope.ServiceProvider.GetRequiredService<PlaylistsElasticService>();
             var usersElasticService = scope.ServiceProvider.GetRequiredService<UsersElasticService>();
             var genresElasticService = scope.ServiceProvider.GetRequiredService<GenresElasticService>();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            await db.Database.MigrateAsync();
 
             List<Task> createIndexTasks = new()
             {

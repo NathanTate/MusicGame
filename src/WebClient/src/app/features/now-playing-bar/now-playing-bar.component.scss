@@ -47,6 +47,8 @@
   }
 
   .image-wrapper {
+    display: flex;
+    align-items: center;
     flex-shrink: 0;
     height: 56px;
     width: 56px;

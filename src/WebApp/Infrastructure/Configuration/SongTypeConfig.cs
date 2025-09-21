@@ -28,6 +28,11 @@ internal class SongTypeConfig : IEntityTypeConfiguration<Song>
             .IsRequired();
 
         builder
+            .Property(b => b.ArtistName)
+            .HasMaxLength(100)
+            .IsRequired();
+
+        builder
             .Property(b => b.Url)
             .IsRequired();
 

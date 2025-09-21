@@ -14,6 +14,7 @@ import { genresResolver } from './core/resolvers/genres.resolver';
 import { SearchPageComponent } from './features/search-page/search-page.component';
 import { TrackPageComponent } from './features/track-page/track-page.component';
 import { songResolver } from './core/resolvers/song.resolver';
+import { ShowAllComponent } from './features/show-all/show-all.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent, canActivate: [canAuthGuard] },
@@ -61,7 +62,11 @@ export const routes: Routes = [
       {
         path: 'search/:searchTerm',
         component: SearchPageComponent
-      }
+      },
+      {
+        path: 'show-all',
+        component: ShowAllComponent
+      },
     ]
   },
   { path: '**', component: NotFoundComponent }

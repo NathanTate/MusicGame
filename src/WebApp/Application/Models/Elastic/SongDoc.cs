@@ -5,6 +5,7 @@ using Elastic.Clients.Elasticsearch.QueryDsl;
 namespace Application.Models.Elastic;
 public class SongDoc : BaseDoc
 {
+    public string OwnerName { get; set; } = null!;
     public string ArtistName { get; set; } = null!;
     public List<string> GenreNames { get; set; } = [];
 
@@ -20,24 +21,31 @@ public class SongDoc : BaseDoc
         {
             Should = new List<Query>
             {
-               new MatchQuery(Infer.Field("name"))
-               {
+                new MatchQuery(Infer.Field("name"))
+                {
+                    Query = query.SearchTerm,
+                    Boost = 4,
+                    Fuzziness = new Fuzziness(1)
+                },
+                new MatchQuery(Infer.Field("artistName"))
+                {
                     Query = query.SearchTerm,
                     Boost = 3,
                     Fuzziness = new Fuzziness(1)
-               },
-                new MatchQuery(Infer.Field("artistName"))
-               {
+                },
+                new MatchQuery(Infer.Field("ownerName"))
+                {
                     Query = query.SearchTerm,
                     Boost = 2,
                     Fuzziness = new Fuzziness(1)
-               },
-                 new MatchQuery(Infer.Field("genreNames"))
-               {
+                },
+
+                new MatchQuery(Infer.Field("genreNames"))
+                {
                     Query = query.SearchTerm,
                     Boost = 1,
                     Fuzziness = new Fuzziness(1)
-               }
+                }
             },
             MinimumShouldMatch = 1
         };

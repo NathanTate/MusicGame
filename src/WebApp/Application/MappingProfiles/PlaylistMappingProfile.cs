@@ -1,4 +1,5 @@
-﻿using Application.Models.Playlists;
+﻿using Application.Models.Elastic;
+using Application.Models.Playlists;
 using AutoMapper;
 using Domain.Entities;
 
@@ -16,5 +17,8 @@ internal class PlaylistMappingProfile : Profile
         CreateMap<UpsertSongPlaylistRequest, PlaylistSong>();
         CreateMap<PlaylistSong, PlaylistSongResponse>()
             .ForMember(dest => dest.Song, opt => opt.MapFrom(src => src.Song));
+
+        CreateMap<Playlist, PlaylistDoc>()
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.PlaylistId));
     }
 }

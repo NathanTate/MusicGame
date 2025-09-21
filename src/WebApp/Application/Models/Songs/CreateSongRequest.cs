@@ -6,6 +6,7 @@ namespace Application.Models.Songs;
 public sealed class CreateSongRequest
 {
     public string Name { get; set; } = null!;
+    public string ArtistName { get; set; } = null!;
     public int Duration { get; set; }
     public bool IsPrivate { get; set; }
     public DateTime ReleaseDate { get; set; }

@@ -4,7 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { Button } from 'primeng/button';
 import { AuthService } from '../../auth/auth.service';
-import { AsyncPipe, DatePipe, NgIf } from '@angular/common';
+import { AsyncPipe, DatePipe, NgClass, NgIf } from '@angular/common';
 import { FormatDurationPipe } from '../../shared/pipes/format-duration.pipe';
 import { SongResponse } from '../../core/models/song/songResponse';
 import { AudioService } from '../../core/services/audio.service';
@@ -26,7 +26,7 @@ import { EditPlaylistModalComponent } from '../../shared/components/modals/edit-
 @Component({
   selector: 'app-playlist',
   standalone: true,
-  imports: [DialogModule, TableModule, Button, DatePipe, FormatDurationPipe, IconFieldModule, InputIconModule, InputTextModule, NgIf, AsyncPipe, MenuModule],
+  imports: [DialogModule, TableModule, Button, DatePipe, FormatDurationPipe, IconFieldModule, InputIconModule, InputTextModule, NgIf, AsyncPipe, MenuModule, NgClass],
   templateUrl: './playlist.component.html',
   styleUrl: './playlist.component.scss',
   providers: [DialogService]
@@ -48,6 +48,7 @@ export class PlaylistComponent implements OnInit {
   repeat = signal<boolean>(false);
   playlistPlayed = signal<boolean>(false);
   selectedSong = signal<PlaylistSongResponse | undefined>(undefined);
+  listFormat = signal<ListFormat>(ListFormat.List);
   randomColors: string[] = [
     '80, 56, 160',
     '16, 208, 240',
@@ -59,11 +60,13 @@ export class PlaylistComponent implements OnInit {
     items: [
       {
         label: 'Compact',
-        icon: 'pi pi-bars'
+        icon: 'pi pi-bars',
+        format: ListFormat.Compact
       },
       {
         label: 'List',
-        icon: 'pi pi-list'
+        icon: 'pi pi-list',
+        format: ListFormat.List
       }
     ]
   }]);
@@ -74,6 +77,10 @@ export class PlaylistComponent implements OnInit {
 
   get contentHeader() {
     return this.contentHeaderEl().nativeElement;
+  }
+
+  setListFormat(format: ListFormat) {
+    this.listFormat.set(format);
   }
 
   openModal() {
@@ -118,9 +125,7 @@ export class PlaylistComponent implements OnInit {
         this.playlist.set(playlist);
       })
 
-    this.songService.songUpdated$.pipe(switchMap((songId: number) => {
-      return this.songService.getSong(songId);
-    }), takeUntilDestroyed(this.destroyRef))
+    this.songService.songUpdated$.pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((song: SongResponse) => {
         const playlist = this.playlist();
         const songIndex = playlist?.songs.findIndex(s => s.song.songId === song.songId)
@@ -172,8 +177,9 @@ export class PlaylistComponent implements OnInit {
     const playlist = this.playlist();
     let song: SongResponse | undefined;
     this.state$.pipe(take(1)).subscribe((state: AudioState) => {
-      song = state.song
-    })
+      this.repeat.set(state.repeat);
+      song = state.song;
+    });
     if (playlist && song) {
       const songIndex = playlist.songs.map(s => s.song.songId).indexOf(song?.songId);
       return playlist.songs.length > songIndex + 1 ? songIndex : -1;
@@ -204,6 +210,7 @@ export class PlaylistComponent implements OnInit {
     const element = event.target as HTMLElement;
 
     if (!this.animationFrameRequested) {
+      this.animationFrameRequested = true;
       window.requestAnimationFrame(() => {
         this.updateStylesOnScroll(element)
         this.animationFrameRequested = false;
@@ -235,4 +242,13 @@ export class PlaylistComponent implements OnInit {
     element.style.setProperty('--header-opacity', opacity.toString());
   }
 
+  get ListFormat() {
+    return ListFormat;
+  }
+
+}
+
+enum ListFormat {
+  Compact = 1,
+  List = 2
 }

@@ -11,6 +11,7 @@ using Application.Models.Queries;
 using Application.Models;
 using Domain.Enums;
 using Application.Services.Elastic;
+using Application.Models.Elastic;
 
 namespace Application.Services;
 internal class GenreService : IGenreService
@@ -46,7 +47,7 @@ internal class GenreService : IGenreService
                 SearchTerm = query.SearchTerm
             };
 
-            var result = await _elasticService.SearchAsync(elasticQuery, ElasticIndex.GenresIndex);
+            var result = await _elasticService.SearchAsync(elasticQuery, ElasticIndex.GenresIndex, cancellationToken);
 
             if (result.IsFailed)
             {
@@ -54,7 +55,7 @@ internal class GenreService : IGenreService
             }
 
             searchIds = result.Value.Select(x => Convert.ToInt32(x.Id)).ToList();
-            
+
             genresQuery = genresQuery.Where(x => searchIds.Contains(x.GenreId));
         }
 
@@ -119,6 +120,7 @@ internal class GenreService : IGenreService
         _dbContext.Genres.Add(genre);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await _elasticService.AddOrUpdateAsync(_mapper.Map<GenreDoc>(genre), ElasticIndex.GenresIndex, cancellationToken);
 
         return Result.Ok(_mapper.Map<GenreResponse>(genre));
     }
@@ -135,6 +137,7 @@ internal class GenreService : IGenreService
         _mapper.Map(model, genre);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await _elasticService.AddOrUpdateAsync(_mapper.Map<GenreDoc>(genre), ElasticIndex.GenresIndex, cancellationToken);
 
         return Result.Ok(_mapper.Map<GenreResponse>(genre));
     }
@@ -151,6 +154,7 @@ internal class GenreService : IGenreService
         _dbContext.Remove(genre);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await _elasticService.Remove(genre.GenreId.ToString(), ElasticIndex.GenresIndex, cancellationToken);
 
         return Result.Ok();
     }

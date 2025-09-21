@@ -1,0 +1,17 @@
+<article class="show-all">
+  <div>
+    <div class="flex justify-content-between align-items-center">
+      <div>
+        <h2 class="text-lg md:text-2xl">{{title()}}</h2>
+      </div>
+    </div>
+  </div>
+  <div class="grid-container">
+    @for (song of songs(); track song.songId + song.name) {
+      <app-track-card [song]="song"/>
+    }
+    @for (playlist of playlists(); track playlist.playlistId + playlist.name) {
+      <app-playlist-card [playlist]="playlist"/>
+    }
+  </div>
+</article>

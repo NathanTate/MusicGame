@@ -15,6 +15,7 @@ using Application.Models.Queries;
 using Application.Models;
 using Application.Services.Elastic;
 using GeniusLyrics.NET;
+using Application.Models.Elastic;
 
 namespace Application.Services;
 
@@ -113,6 +114,7 @@ internal class SongService : ISongService
         _dbContext.Songs.Add(song);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await _elasticService.AddOrUpdateAsync(_mapper.Map<SongDoc>(song), ElasticIndex.SongsIndex, cancellationToken);
 
         return Result.Ok(_mapper.Map<SongResponse>(song));
     }
@@ -132,7 +134,7 @@ internal class SongService : ISongService
             return new NotFoundError($"Song with id {songId} cannot be found");
         }
 
-        var songWithLyrics = await _geniusClient.GetSong(song.Name, "un");
+        var songWithLyrics = await _geniusClient.GetSong(song.Name, song.ArtistName);
         song.Lyrics = songWithLyrics?.Lyrics;
 
         var likesCount = await _dbContext.SongLike.Where(x => x.SongId == song.SongId).CountAsync(cancellationToken);
@@ -170,7 +172,7 @@ internal class SongService : ISongService
                 SearchTerm = query.SearchTerm
             };
 
-            var result = await _elasticService.SearchAsync(elasticQuery, ElasticIndex.SongsIndex);
+            var result = await _elasticService.SearchAsync(elasticQuery, ElasticIndex.SongsIndex, cancellationToken);
 
             if (result.IsFailed)
             {
@@ -291,6 +293,7 @@ internal class SongService : ISongService
         AttachGenresToSong(song, model.GenreIds);
 
         await _dbContext.SaveChangesAsync();
+        await _elasticService.AddOrUpdateAsync(_mapper.Map<SongDoc>(song), ElasticIndex.SongsIndex, cancellationToken);
 
         return Result.Ok(_mapper.Map<SongResponse>(song));
     }
@@ -321,6 +324,7 @@ internal class SongService : ISongService
 
         await _fileHandler.DeleteFileAsync(fileName, FileContainer.Songs, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await _elasticService.Remove(song.SongId.ToString(), ElasticIndex.SongsIndex, cancellationToken);
 
         return Result.Ok();
     }
@@ -443,9 +447,10 @@ internal class SongService : ISongService
         foreach (var id in genreIds)
         {
             var genre = song.Genres.Find(x => x.GenreId == id);
+            var genreName = _dbContext.Genres.AsNoTracking().FirstOrDefault(x => x.GenreId == id)?.Name ?? "";
             if (genre is null)
             {
-                genre = new Genre() { GenreId = id };
+                genre = new Genre() { GenreId = id, Name = genreName };
                 _dbContext.Attach(genre);
                 song.Genres.Add(genre);
             }

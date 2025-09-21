@@ -16,6 +16,7 @@ using Application.Models.Queries;
 using Application.Models.Users;
 using Application.Services.Elastic;
 using Application.Models.Songs;
+using Application.Models.Elastic;
 
 namespace Application.Services;
 internal class PlaylistService : IPlaylistService
@@ -98,6 +99,7 @@ internal class PlaylistService : IPlaylistService
         _dbContext.Playlists.Add(playlist);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await _elasticService.AddOrUpdateAsync(_mapper.Map<PlaylistDoc>(playlist), ElasticIndex.PlaylistsIndex, cancellationToken);
 
         return _mapper.Map<PlaylistResponse>(playlist);
     }
@@ -160,7 +162,7 @@ internal class PlaylistService : IPlaylistService
                 SearchTerm = query.SearchTerm
             };
 
-            var result = await _elasticService.SearchAsync(elasticQuery, ElasticIndex.PlaylistsIndex);
+            var result = await _elasticService.SearchAsync(elasticQuery, ElasticIndex.PlaylistsIndex, cancellationToken);
 
             if (result.IsFailed)
             {
@@ -257,6 +259,7 @@ internal class PlaylistService : IPlaylistService
         _mapper.Map(model, playlist);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await _elasticService.AddOrUpdateAsync(_mapper.Map<PlaylistDoc>(playlist), ElasticIndex.PlaylistsIndex, cancellationToken);
 
         return Result.Ok(_mapper.Map<PlaylistResponse>(playlist));
     }
@@ -284,6 +287,7 @@ internal class PlaylistService : IPlaylistService
         _dbContext.Playlists.Remove(playlist);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await _elasticService.Remove(currentUser.UserId, ElasticIndex.PlaylistsIndex, cancellationToken);
 
         return Result.Ok();
     }

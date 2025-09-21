@@ -1,4 +1,5 @@
-﻿using Application.Models.Songs;
+﻿using Application.Models.Elastic;
+using Application.Models.Songs;
 using AutoMapper;
 using Domain.Entities;
 
@@ -17,5 +18,9 @@ internal class SongMappingProfile : Profile
             .ForMember(dest => dest.ContentType, opt => opt.MapFrom(src => src.SongFile.ContentType));
 
         CreateMap<UpdateSongRequest, Song>();
+
+        CreateMap<Song, SongDoc>()
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.SongId))
+            .ForMember(dest => dest.GenreNames, opt => opt.MapFrom(src => src.Genres.Select(x => x.Name)));
     }
 }
