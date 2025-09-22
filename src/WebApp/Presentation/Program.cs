@@ -6,10 +6,21 @@ using Infrastructure.Context;
 using Infrastructure.Seed;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.AzureAppServices;
 using Presentation.Extensions;
 using Presentation.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add loggin configurations
+
+builder.Logging.AddAzureWebAppDiagnostics();
+builder.Services.Configure<AzureFileLoggerOptions>(options =>
+{
+    options.FileName = "logs-";
+    options.FileSizeLimit = 50 * 1024;
+    options.RetainedFileCountLimit = 5;
+});
 
 // Add services to the container.
 
@@ -32,6 +43,7 @@ else
     origins.Add("https://mango-coast-09be74403.2.azurestaticapps.net");
 }
 
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Default", policy =>
@@ -42,6 +54,7 @@ builder.Services.AddCors(options =>
         .AllowCredentials();
     });
 });
+
 
 var app = builder.Build();
 
