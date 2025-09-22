@@ -8,6 +8,10 @@ using Domain.Primitives;
 using Application.Services.Auth;
 using Application.Interfaces;
 using Application.Services;
+using Application.Common.UserHelpers;
+using Elastic.Clients.Elasticsearch;
+using Application.Services.Elastic;
+using GeniusLyrics.NET;
 
 namespace Application;
 public static class ApplicationServiceCollectionExtensions
@@ -19,8 +23,13 @@ public static class ApplicationServiceCollectionExtensions
         services.Configure<JwtOptions>(configuration.GetSection("JwtOptions"));
         configuration.Bind("JwtOptions", jwtOptions);
 
+        services.AddHttpContextAccessor();
         services.AddAutoMapper(assembly);
         services.AddValidatorsFromAssembly(assembly);
+        var settings = new ElasticsearchClientSettings(new Uri("http://localhost:9200"))
+                .DisableDirectStreaming();
+        services.AddSingleton(new ElasticsearchClient(settings));
+        services.AddSingleton(new GeniusClient(configuration.GetValue<string>("GeniusApiKey") ?? ""));
         services.AddAuthentication(jwtOptions);
         services.AddServiceCollections();
 
@@ -41,6 +50,16 @@ public static class ApplicationServiceCollectionExtensions
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecurityKey)),
                     ClockSkew = TimeSpan.FromSeconds(30)
                 };
+
+                options.Events = new JwtBearerEvents()
+                {
+                    OnMessageReceived = context =>
+                    {
+                        context.HttpContext.Request.Cookies.TryGetValue("accessToken", out string? accessToken);
+                        context.Token = accessToken;
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
         services.AddAuthorization();
@@ -50,9 +69,16 @@ public static class ApplicationServiceCollectionExtensions
 
     private static IServiceCollection AddServiceCollections(this IServiceCollection services)
     {
+        services.AddScoped<IUserContext, UserContext>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<IGenreService, GenreService>();
         services.AddScoped<ISongService, SongService>();
+        services.AddScoped<IPlaylistService, PlaylistService>();
+        services.AddScoped<IUserService, UserService>();
+        services.AddScoped<SongsElasticService>();
+        services.AddScoped<PlaylistsElasticService>();
+        services.AddScoped<UsersElasticService>();
+        services.AddScoped<GenresElasticService>();
 
         return services;
     }

@@ -1,7 +1,11 @@
 using Application;
+using Application.Services.Elastic;
+using Domain.Enums;
 using Infrastructure;
+using Infrastructure.Context;
 using Infrastructure.Seed;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Presentation.Extensions;
 using Presentation.Middleware;
 
@@ -16,6 +20,16 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddPresentation();
 builder.Services.AddApplicationLayer(builder.Configuration);
 builder.Services.AddInfrastructureLayer(builder.Configuration);
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Default", policy =>
+    {
+        policy.WithOrigins("http://localhost:4200")
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
+    });
+});
 
 var app = builder.Build();
 
@@ -32,7 +46,7 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 
-app.UseCors();
+app.UseCors("Default");
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -50,7 +64,33 @@ async Task SeedData()
         try
         {
             var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            var songsElasticService = scope.ServiceProvider.GetRequiredService<SongsElasticService>();
+            var playlistsElasticService = scope.ServiceProvider.GetRequiredService<PlaylistsElasticService>();
+            var usersElasticService = scope.ServiceProvider.GetRequiredService<UsersElasticService>();
+            var genresElasticService = scope.ServiceProvider.GetRequiredService<GenresElasticService>();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
+            await db.Database.MigrateAsync();
+
+            List<Task> createIndexTasks = new()
+            {
+                songsElasticService.CreateIndexIfNotExistsAsync(ElasticIndex.SongsIndex),
+                playlistsElasticService.CreateIndexIfNotExistsAsync(ElasticIndex.PlaylistsIndex),
+                usersElasticService.CreateIndexIfNotExistsAsync(ElasticIndex.UsersIndex),
+                genresElasticService.CreateIndexIfNotExistsAsync(ElasticIndex.GenresIndex)
+            };
+
+            await Task.WhenAll(createIndexTasks);
+
+            List<Task> reindexTasks = new()
+            {
+                songsElasticService.ReindexAllAsync(),
+                playlistsElasticService.ReindexAllAsync(),
+                usersElasticService.ReindexAllAsync(),
+                genresElasticService.ReindexAllAsync()
+            };
+
+            await Task.WhenAll(reindexTasks);
             await SeedRoles.Seed(roleManager);
         }
         catch (Exception ex)

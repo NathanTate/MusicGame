@@ -1,127 +1,184 @@
-@font-face {
-  font-family: 'Poppins';
-  src: url('../public/fonts/Poppins/Poppins-Regular.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-}
+@import '_fonts.scss';
+@import '_variables.scss';
 
-@font-face {
-  font-family: 'Poppins';
-  src: url('../public/fonts/Poppins/Poppins-Medium.ttf') format('truetype');
-  font-weight: 500;
-  font-style: normal;
-}
+@import "primeng/resources/themes/arya-orange/theme.css";
+@import "primeng/resources/primeng.css";
+@import "primeflex/primeflex.css";
+@import "primeicons/primeicons.css";
 
-@font-face {
-  font-family: 'Poppins';
-  src: url('../public/fonts/Poppins/Poppins-SemiBold.ttf') format('truetype');
-  font-weight: 600;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: 'Poppins';
-  src: url('../public/fonts/Poppins/Poppins-Bold.ttf') format('truetype');
-  font-weight: 700;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: 'Poppins';
-  src: url('../public/fonts/Poppins/Poppins-Light.ttf') format('truetype');
-  font-weight: 300;
-  font-style: normal;
-}
-
-/* Box sizing rules */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-/* Prevent font size inflation */
-html {
-  -moz-text-size-adjust: none;
-  -webkit-text-size-adjust: none;
-  text-size-adjust: none;
-}
-
-/* Remove default margin in favour of better control in authored CSS */
-* {
+body {
+  font-family: 'Roboto', sans-serif;
+  height: 100vh;
   margin: 0;
   padding: 0;
-  font: inherit;
 }
 
-/* Remove list styles on ul, ol elements with a list role, which suggests default styling will be removed */
-ul[role='list'],
-ol[role='list'] {
-  list-style: none;
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
 }
 
-ul, ol {
-  list-style-position: inside;
-}
-
-html,
-body {
-  min-height: 100%;
-}
-
-/* Set core body defaults */
-body {
-  text-rendering: optimizeSpeed;
-  line-height: 1.5;
-}
-
-/* Set shorter line heights on headings and interactive elements */
-h1, h2, h3, h4,
-button, input, label {
-  line-height: 1.1;
-}
-
-/* Balance text wrapping on headings */
-h1, h2,
-h3, h4 {
-  text-wrap: balance;
-}
-
-/**/
-p {
-  letter-spacing: 0.2px;
-}
-
-/* A elements that don't have a class get default styles */
-a:not([class]) {
-  text-decoration-skip-ink: auto;
-  color: currentColor;
-}
-
-a.button {
+a {
   display: inline-block;
+  color: var(--primary-color);
   text-decoration: none;
 }
 
-/* Make images easier to work with */
-img,
-picture,
-svg {
-  max-width: 100%;
-  display: block;
+ul,
+ol {
+  list-style-position: inside;
+  margin: 0;
+  padding: 0;
 }
 
-/* Inherit fonts for inputs and buttons */
-
-/* Make sure textareas without a rows attribute are not tiny */
-textarea:not([rows]) {
-  min-height: 10em;
+.visually-hidden {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
 }
 
-/* Anything that has been anchored to should have extra scroll margin */
-:target {
-  scroll-margin-block: 5ex;
+.card {
+  background-color: var(--surface-card);
+  border: var(--card-border);
+  padding: 2rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
 }
 
+.max-w-auth-card {
+  max-width: 35rem;
+}
 
-/*Utility*/
+.form-group {
+  margin-bottom: 1rem;
+
+  label {
+    display: inline-block;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-control {
+    display: block;
+    width: 100%;
+  }
+
+  .is-invalid {
+    border-color: var(--red-500);
+  }
+}
+
+.message-block {
+  margin-top: 0.5rem;
+
+  .error-message {
+    display: none;
+    color: var(--red-500);
+  }
+
+  .error-message:first-child {
+    display: block;
+  }
+
+}
+
+.text-danger {
+  color: red;
+}
+
+.p-toolbar {
+  padding: 0.5rem 0.75rem 0rem;
+  background: var(--surface-b);
+  backdrop-filter: blur(8px);
+  border: none;
+  margin-top: -$main-view-padding;
+  margin-inline: -$main-view-padding;
+}
+
+.scrollable {
+  overflow: auto;
+}
+
+.scrollbar-horizontal {
+  overflow-x: auto;
+  overflow-y: hidden;
+  width: 100%;
+}
+
+.scrollbar-vertical {
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 100%;
+}
+
+.scrollbar-horizontal::-webkit-scrollbar-track,
+.scrollbar-vertical::-webkit-scrollbar-track {
+  background-color: var(--surface-ground);
+}
+
+.scrollbar-horizontal::-webkit-scrollbar,
+.scrollbar-vertical::-webkit-scrollbar {
+  width: $scrollbar-width;
+}
+
+.scrollbar-horizontal::-webkit-scrollbar-thumb,
+.scrollbar-vertical::-webkit-scrollbar-thumb {
+  background-color: var(--surface-200);
+  border-radius: 4px;
+}
+
+.x-lines-limit {
+  --max-lines: 1;
+
+  display: -webkit-box;
+  -webkit-line-clamp: var(--max-lines);
+  line-clamp: var(--max-lines);
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.icon-wrapper {
+  --size: 24px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.icon-wrapper>svg {
+  min-width: var(--size);
+  min-height: var(--size);
+  width: var(--size);
+  aspect-ratio: 1;
+  min-width: var(--size);
+  fill: currentColor;
+}
+
+.p-data-table>tr>th {
+  background: transparent;
+}
+
+.play-button {
+  --size: 48px;
+
+  background-color: var(--primary-color);
+  width: var(--size);
+  height: var(--size);
+  border: none;
+  border-radius: 50%;
+
+  &:hover {
+    cursor: pointer;
+    scale: 1.05;
+    background: color-mix(in srgb, var(--primary-color) 95%, transparent);
+  }
+}

@@ -1,7 +1,7 @@
-﻿using Application.InfrastructureInterfaces;
-using Azure.Storage.Blobs;
+﻿using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Domain.Enums;
+using Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
 
 namespace Infrastructure.ExternalProviders;

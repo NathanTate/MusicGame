@@ -1,0 +1,64 @@
+@import '../../../../_variables.scss';
+
+.progress-bar {
+  --progress-width: 10%;
+  --drag-control-opacity: 0;
+  --progress-bg-color: unset;
+  height: 12px;
+  position: relative;
+  width: 100%;
+
+  * {
+    pointer-events: none;
+  }
+
+  &:hover {
+    cursor: pointer;
+
+    .progress {
+      background-color: rgb(6, 240, 6);
+
+      .drag-control {
+        opacity: 1;
+      }
+    }
+  }
+
+  .progress {
+    background-color: var(--progress-bg-color, var(--primary-color));
+
+    .drag-control {
+      opacity: var(--drag-control-opacity);
+    }
+  }
+}
+
+.progress-bg {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 100%;
+  height: 4px;
+  border-radius: $global-border-radius;
+  background-color: var(--surface-200);
+}
+
+.progress {
+  position: relative;
+  height: 4px;
+  border-radius: inherit;
+  background-color: var(--primary-color);
+  width: var(--progress-width);
+
+  .drag-control {
+    opacity: 0;
+    height: 12px;
+    width: 12px;
+    background-color: var(--surface-900);
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: -6px;
+  }
+}

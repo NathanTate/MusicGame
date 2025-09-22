@@ -1,35 +1,106 @@
-﻿using Application.DTO.Genres;
-using Application.InfrastructureInterfaces;
+﻿using Application.Models.Genres;
+using Application.Errors;
 using Application.Interfaces;
 using AutoMapper;
 using Domain.Entities;
 using FluentResults;
+using Infrastructure.Context;
+using Microsoft.EntityFrameworkCore;
+using AutoMapper.QueryableExtensions;
+using Application.Models.Queries;
+using Application.Models;
+using Domain.Enums;
+using Application.Services.Elastic;
+using Application.Models.Elastic;
 
 namespace Application.Services;
 internal class GenreService : IGenreService
 {
-    private readonly IUnitOfWork _uow;
+    private readonly AppDbContext _dbContext;
     private readonly IMapper _mapper;
-    public GenreService(IUnitOfWork uow, IMapper mapper)
+    private readonly GenresElasticService _elasticService;
+    public GenreService(AppDbContext dbContext, IMapper mapper, GenresElasticService elasticService)
     {
         _mapper = mapper;
-        _uow = uow;
+        _dbContext = dbContext;
+        _elasticService = elasticService;
     }
 
-    public async Task<List<GenreResponse>> GetGenresAsync(CancellationToken cancellationToken = default)
+    public async Task<PagedList<GenreResponse>> GetGenresAsync(GenresQuery query, CancellationToken cancellationToken = default)
     {
-        var genres = await _uow.GenreRepository.GetAllAsync(cancellationToken);
+        var genresQuery = _dbContext.Genres
+            .AsNoTracking();
 
-        return _mapper.Map<List<GenreResponse>>(genres);
+        if (query.IsSystemDefined is not null)
+        {
+            genresQuery = genresQuery.Where(x => x.IsSystemDefined == query.IsSystemDefined);
+        }
+
+        List<int> searchIds = new();
+
+        if (!string.IsNullOrWhiteSpace(query.SearchTerm))
+        {
+            var elasticQuery = new ElasticQuery
+            {
+                PageSize = query.PageSize,
+                Page = query.Page,
+                SearchTerm = query.SearchTerm
+            };
+
+            var result = await _elasticService.SearchAsync(elasticQuery, ElasticIndex.GenresIndex, cancellationToken);
+
+            if (result.IsFailed)
+            {
+                throw new ArgumentNullException(result.Errors.Select(x => x.Message).FirstOrDefault());
+            }
+
+            searchIds = result.Value.Select(x => Convert.ToInt32(x.Id)).ToList();
+
+            genresQuery = genresQuery.Where(x => searchIds.Contains(x.GenreId));
+        }
+
+        if (query.SortOrder == "desc")
+        {
+            genresQuery = genresQuery.OrderByDescending(x => x.Name);
+        }
+        else
+        {
+            genresQuery = genresQuery.OrderBy(x => x.Name);
+        }
+
+        var pagedList = await PagedList<GenreResponse>.CreateAsync(genresQuery.ProjectTo<GenreResponse>(_mapper.ConfigurationProvider), query.Page, query.PageSize);
+
+        if (!string.IsNullOrWhiteSpace(query.SearchTerm))
+        {
+            var orderedItems = pagedList.Items.OrderBy(x => searchIds.IndexOf(x.GenreId)).ToList();
+
+            return new PagedList<GenreResponse>(orderedItems, pagedList.Page, pagedList.PageSize, pagedList.TotalCount);
+        }
+
+        return pagedList;
+    }
+
+    public async Task<PagedList<GenreResponse>> GetByIdsAsync(IEnumerable<int> ids, GenresQuery query, CancellationToken cancellationToken = default)
+    {
+        var genresQuery = _dbContext.Genres
+           .AsNoTracking()
+           .Where(x => ids.Contains(x.GenreId));
+
+        if (query.IsSystemDefined is not null)
+        {
+            genresQuery = genresQuery.Where(x => x.IsSystemDefined == query.IsSystemDefined);
+        }
+
+        return await PagedList<GenreResponse>.CreateAsync(genresQuery.ProjectTo<GenreResponse>(_mapper.ConfigurationProvider), query.Page, query.PageSize);
     }
 
     public async Task<Result<GenreResponse>> GetGenreAsync(int genreId, CancellationToken cancellationToken = default)
     {
-        var genre = await _uow.GenreRepository.GetByIdAsync(genreId, false, cancellationToken);
+        var genre = await _dbContext.Genres.FindAsync([genreId], cancellationToken);
 
         if (genre is null)
         {
-            return Result.Fail($"Genre with Id - {genreId} was not found");
+            return new NotFoundError($"Genre with id {genreId} cannot be found");
         }
 
         return Result.Ok(_mapper.Map<GenreResponse>(genre));
@@ -37,51 +108,61 @@ internal class GenreService : IGenreService
 
     public async Task<Result<GenreResponse>> CreateGenreAsync(CreateGenreRequest model, CancellationToken cancellationToken = default)
     {
-        var exists = await _uow.ExistsAsync<Genre>(g => g.NormalizedName == model.Name.ToUpper(), cancellationToken);
+        var exists = await _dbContext.Genres.AnyAsync(g => g.NormalizedName == model.Name.ToUpper(), cancellationToken);
 
         if (exists)
         {
-            return Result.Fail($"Genere with name - {model.Name} already exists");
+            return new ValidationError($"Genre with name {model.Name} already exists");
         }
 
         var genre = _mapper.Map<Genre>(model);
 
-        _uow.GenreRepository.Create(genre);
+        _dbContext.Genres.Add(genre);
 
-        await _uow.SaveChangesAsync(cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _elasticService.AddOrUpdateAsync(_mapper.Map<GenreDoc>(genre), ElasticIndex.GenresIndex, cancellationToken);
 
         return Result.Ok(_mapper.Map<GenreResponse>(genre));
     }
 
     public async Task<Result<GenreResponse>> UpdateGenreAsync(UpdateGenreRequest model, CancellationToken cancellationToken = default)
     {
-        var genre = await _uow.GenreRepository.GetByIdAsync(model.GenreId, true, cancellationToken);
+        var genre = await _dbContext.Genres.FindAsync([model.GenreId], cancellationToken);
 
         if (genre is null)
         {
-            return Result.Fail($"Genre with Id - {model.GenreId} doesn't exist");
+            return new NotFoundError($"Genre with id {model.GenreId} cannot be found");
         }
 
         _mapper.Map(model, genre);
 
-        _uow.GenreRepository.Update(genre);
-
-        await _uow.SaveChangesAsync(cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _elasticService.AddOrUpdateAsync(_mapper.Map<GenreDoc>(genre), ElasticIndex.GenresIndex, cancellationToken);
 
         return Result.Ok(_mapper.Map<GenreResponse>(genre));
     }
 
     public async Task<Result> DeleteGenreAsync(int genreId, CancellationToken cancellationToken = default)
     {
-        var success = await _uow.GenreRepository.DeleteAsync(genreId, cancellationToken);
+        var genre = await _dbContext.Genres.FindAsync([genreId], cancellationToken);
 
-        if (!success)
+        if (genre is null)
         {
-            return Result.Fail($"Genre with Id - {genreId} doesn't exist");
+            return new NotFoundError($"Genre with id {genreId} cannot be found");
         }
 
-        await _uow.SaveChangesAsync(cancellationToken);
-        
+        _dbContext.Remove(genre);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _elasticService.Remove(genre.GenreId.ToString(), ElasticIndex.GenresIndex, cancellationToken);
+
         return Result.Ok();
     }
+
+    public async Task<bool> IsGenreNameAvailable(string name, CancellationToken cancellationToken = default)
+    {
+        var exists = await _dbContext.Genres.AnyAsync(p => p.Name.ToUpper() == name.ToUpper(), cancellationToken);
+        return !exists;
+    }
+
 }

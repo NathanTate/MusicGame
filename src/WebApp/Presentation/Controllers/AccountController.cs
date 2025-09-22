@@ -1,21 +1,26 @@
 ﻿using Application.Common.Helpers;
-using Application.DTO;
-using Application.DTO.Users;
+using Application.Models;
+using Application.Models.Users;
+using Application.Interfaces;
 using Application.Services.Auth;
 using FluentResults;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Presentation.Extensions;
 
 namespace Presentation.Controllers;
 
-[Route("account")]
+[Route("api/account")]
 public class AccountController : BaseApiController
 {
     private readonly IAuthenticationService _authenticationService;
-    public AccountController(IAuthenticationService authenticationService)
+    private readonly IUserService _userService;
+    public AccountController(IAuthenticationService authenticationService, IUserService userService)
     {
         _authenticationService = authenticationService;
+        _userService = userService;
     }
 
     [HttpPost("register")]
@@ -27,10 +32,7 @@ public class AccountController : BaseApiController
 
         Result<string> result = await _authenticationService.RegisterAsync(model, HttpContext.RequestAborted);
 
-        if (result.IsFailed)
-            return BadRequest(result.Errors);
-
-        return Ok(result.Value);
+        return result.ToCreateHttpResponse(HttpContext);
     }
 
     [HttpPost("login")]
@@ -42,59 +44,53 @@ public class AccountController : BaseApiController
 
         Result<LoginResponse> result = await _authenticationService.LoginAsync(model);
 
-        if (result.IsFailed)
-            return Unauthorized(result.Errors);
+        if (result.IsSuccess)
+            SetCookieToken(result.Value.Tokens.accessToken);
 
-        return Ok(result.Value);
+        return result.ToHttpResponse(HttpContext);
     }
 
     [HttpPost("refreshToken")]
-    public async Task<IActionResult> RefreshToken([FromBody] TokenDto model, IValidator<TokenDto> validator)
+    public async Task<IActionResult> RefreshToken([FromBody] TokenDto refreshToken, [FromServices] IValidator<TokenDto> validator)
     {
-        ModelStateDictionary errors = await Validator.ValidateAsync(validator, model, HttpContext.RequestAborted);
+        ModelStateDictionary errors = await Validator.ValidateAsync(validator, refreshToken, HttpContext.RequestAborted);
         if (errors.Count > 0)
             return ValidationProblem(errors);
 
-        Result<TokenDto> result = await _authenticationService.RefreshTokenAsync(model);
+        Result<TokenWrapper> result = await _authenticationService.RefreshTokenAsync(refreshToken);
 
-        if (result.IsFailed)
-            return BadRequest(result.Errors);
+        if (result.IsSuccess)
+            SetCookieToken(result.Value.accessToken);
 
-        return Ok(result.Value);
+        return result.ToHttpResponse(HttpContext);
     }
 
-    [HttpPost("confirmEmail")]
-    public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailRequest model, IValidator<ConfirmEmailRequest> validator)
+    [HttpPost("confirm-email")]
+    public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailRequest model, [FromServices] IValidator<ConfirmEmailRequest> validator)
     {
         ModelStateDictionary errors = await Validator.ValidateAsync(validator, model, HttpContext.RequestAborted);
         if (errors.Count > 0)
             return ValidationProblem(errors);
 
         Result result = await _authenticationService.ConfirmEmailAsync(model, HttpContext.RequestAborted);
-    
-        if (result.IsFailed)
-            return BadRequest(result.Errors);
 
-        return Ok();
+        return result.ToHttpResponse(HttpContext);
     }
 
-    [HttpPost("SendResetPasswordCode")]
-    public async Task<IActionResult> SendResetPasswordCode([FromBody] EmailRequest model, IValidator<EmailRequest> validator)
+    [HttpPost("send-reset-passwordCode")]
+    public async Task<IActionResult> SendResetPasswordCode([FromBody] EmailRequest model, [FromServices] IValidator<EmailRequest> validator)
     {
         ModelStateDictionary errors = await Validator.ValidateAsync(validator, model, HttpContext.RequestAborted);
         if (errors.Count > 0)
             return ValidationProblem(errors);
 
         Result result = await _authenticationService.SendResetPasswordCodeAsync(model.Email, HttpContext.RequestAborted);
-   
-        if (result.IsFailed)
-            return NotFound(result.Errors);
 
-        return Ok();
+        return result.ToHttpResponse(HttpContext);
     }
 
-    [HttpPost("resetPassword")]
-    public async Task<IActionResult> ResentPassword([FromBody] ResetPasswordRequest model, IValidator<ResetPasswordRequest> validator)
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest model, [FromServices] IValidator<ResetPasswordRequest> validator)
     {
         ModelStateDictionary errors = await Validator.ValidateAsync(validator, model, HttpContext.RequestAborted);
         if (errors.Count > 0)
@@ -102,14 +98,11 @@ public class AccountController : BaseApiController
 
         Result result = await _authenticationService.ResetPasswordAsync(model, HttpContext.RequestAborted);
 
-        if (result.IsFailed)
-            return BadRequest(result.Errors);
-
-        return Ok();
+        return result.ToHttpResponse(HttpContext);
     }
 
-    [HttpPost("resendConfirmationEmail")]
-    public async Task<IActionResult> ResendConfirmationEmail([FromBody] EmailRequest model, IValidator<EmailRequest> validator)
+    [HttpPost("resend-confirmation-email")]
+    public async Task<IActionResult> ResendConfirmationEmail([FromBody] EmailRequest model, [FromServices] IValidator<EmailRequest> validator)
     {
         ModelStateDictionary errors = await Validator.ValidateAsync(validator, model, HttpContext.RequestAborted);
         if (errors.Count > 0)
@@ -117,9 +110,32 @@ public class AccountController : BaseApiController
 
         Result result = await _authenticationService.ResendConfirmationEmailAsync(model.Email, HttpContext.RequestAborted);
 
-        if (result.IsFailed)
-            return BadRequest(result.Errors);
+        return result.ToHttpResponse(HttpContext);
+    }
 
-        return Ok();
+    [HttpPut]
+    [Authorize]
+    public async Task<IActionResult> UpdateAccount(UpdateProfileRequest model, [FromServices] IValidator<UpdateProfileRequest> validator)
+    {
+        ModelStateDictionary errors = await Validator.ValidateAsync(validator, model, HttpContext.RequestAborted);
+        if (errors.Count > 0)
+            return ValidationProblem(errors);
+
+        Result<UserResponse> result = await _userService.UpdateUserProfileAsync(model, User.GetUserId()!, HttpContext.RequestAborted);
+
+        return result.ToHttpResponse(HttpContext);
+    }
+
+    private void SetCookieToken(TokenDto accessToken)
+    {
+        HttpContext.Response.Cookies.Append("accessToken", accessToken.Token,
+        new CookieOptions
+        {
+            HttpOnly = true,
+            Expires = accessToken.ExpiresAt,
+            IsEssential = true,
+            Secure = true,
+            SameSite = SameSiteMode.None,
+        });
     }
 }

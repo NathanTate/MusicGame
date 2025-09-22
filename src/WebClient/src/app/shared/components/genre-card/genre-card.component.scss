@@ -1,0 +1,76 @@
+@import '../../../../_variables.scss';
+
+.x-card {
+  height: 100%;
+  padding: $global-card-padding;
+  border-radius: $global-border-radius;
+  min-height: 48px;
+  transition: all 150ms ease-in-out;
+
+  &:hover,
+  &:focus-visible {
+    cursor: pointer;
+    background-color: var(--surface-hover);
+
+    .image-preview {
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .5);
+    }
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+  }
+
+  .image-wrapper {
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .image-preview {
+    position: relative;
+    background-color: var(--surface-100);
+    padding-bottom: 100%;
+    border-radius: $global-border-radius;
+    margin-bottom: 12px;
+
+    img,
+    .image-placeholder {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+      border-radius: inherit;
+    }
+
+    &.rounded {
+      border-radius: 50%;
+    }
+  }
+
+
+  .x-card-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 4px;
+  }
+
+  .link-ahead {
+    position: relative;
+    z-index: 1;
+  }
+
+  a {
+    --text-color: var(--surface-900);
+    color: var(--text-color);
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: underline !important;
+      text-underline-offset: 0.2rem;
+    }
+  }
+}

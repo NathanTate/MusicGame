@@ -1,0 +1,181 @@
+<div class="layout scrollable scrollbar-vertical">
+  <p-fileUpload
+    #fileUpload
+    [multiple]="false"
+    accept="audio/*"
+    [maxFileSize]="15 * 1024 * 1024"
+    (onSelect)="onSongSelected($event)"
+  >
+    <ng-template pTemplate="header" let-chooseCallback="chooseCallback" let-clearCallback="clearCallback">
+      <div class="flex align-items-center gap-2">
+        <p-button (onClick)="chooseCallback()" icon="pi pi-images" [rounded]="true" [outlined]="true"></p-button>
+        <p-button (onClick)="onClear($event, clearCallback)" icon="pi pi-times" [rounded]="true" [outlined]="true"></p-button>
+      </div>
+    </ng-template>
+    <ng-template pTemplate="content" let-clearCallback="clearCallback">
+    @if (song()) {
+      <div class="flex gap-2 justify-content-between align-items-center">
+        <div class="flex align-items-center gap-4">
+          <div class="image-wrapper h-3rem">
+            <div class="image-preview">
+              @if (isImage) {
+                <img src="" alt="">
+              } @else {
+                <div class="image-placeholder icon-wrapper" style="--size: 24px">
+                  <svg data-encore-id="icon" role="img" aria-hidden="true" data-testid="playlist" class="Svg-sc-ytk21e-0 bneLcE" viewBox="0 0 24 24">
+                    <path d="M6 3h15v15.167a3.5 3.5 0 1 1-3.5-3.5H19V5H8v13.167a3.5 3.5 0 1 1-3.5-3.5H6V3zm0 13.667H4.5a1.5 1.5 0 1 0 1.5 1.5v-1.5zm13 0h-1.5a1.5 1.5 0 1 0 1.5 1.5v-1.5z">
+                    </path>
+                  </svg>
+                </div>
+              }
+            </div>
+          </div>
+          <div class="font-medium">
+            {{song()?.name}}
+          </div>
+        </div>
+        <div class="flex align-items-center gap-4">
+          <div>
+            {{formatSize(song()?.size || 0)}}
+          </div>
+          <div>
+            <p-button (onClick)="onClear($event, clearCallback)" icon="pi pi-times" [rounded]="true" size="small" styleClass="p-2"></p-button>
+          </div>
+        </div>
+      </div>
+    }
+    </ng-template>
+    <ng-template pTemplate="file"></ng-template>
+    <ng-template pTemplate="empty">
+      <div (click)="fileUpload.choose()" class="flex align-items-center justify-content-center flex-column">
+        @if (songFile.invalid && isFormSubmitted()) {
+          <i class="text-red-500 pi pi-cloud-upload text-6xl border-3 border-circle p-3"></i>
+          <p class="text-red-500">Audio file is required</p>
+        } @else {
+          <i class="pi pi-cloud-upload text-6xl border-3 border-circle p-3"></i>
+          <p>Drag and drop files here to upload</p>
+        }
+      </div>
+    </ng-template>
+  </p-fileUpload>
+  <div class="form-wrapper mt-4">
+    <div class="photo-form mb-4">
+      <app-photo-form
+        [showMenu]="false"
+        (onFileChanged)="onPhotoSelected($event)"/>
+    </div>
+    <form class="form" [formGroup]="form" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="name">Name</label>
+        <input
+          [class.is-invalid]="name.invalid && (name.touched || name.dirty || isFormSubmitted())"
+          class="form-control"
+          pInputText
+          formControlName="name"
+          id="name"/>
+          @if (name.invalid && (name.touched || name.dirty || isFormSubmitted())) {
+            <div class="message-block">
+              @if (name.hasError('required')) {
+                <span class="error-message">Name is required</span>
+              } @else if (name.hasError('whitespaces')) {
+                <span class="error-message">Name cannot contain whitespaces</span>
+              } @else if (name.hasError('maxlength')) {
+                <span class="error-message">Name should be under 100 characters</span>
+              }
+            </div>
+          }
+      </div>
+      <div class="form-group">
+        <label for="artistName">Artist Name</label>
+        <input
+          [class.is-invalid]="artistName.invalid && (artistName.touched || artistName.dirty || isFormSubmitted())"
+          class="form-control"
+          pInputText
+          formControlName="artistName"
+          id="artistName"/>
+          @if (artistName.invalid && (artistName.touched || artistName.dirty || isFormSubmitted())) {
+            <div class="message-block">
+              @if (artistName.hasError('required')) {
+                <span class="error-message">Artist Name is required</span>
+              } @else if (artistName.hasError('whitespaces')) {
+                <span class="error-message">Artist Name cannot contain whitespaces</span>
+              } @else if (artistName.hasError('maxlength') || artistName.hasError('minlength') ) {
+                <span class="error-message">Artist Name should be between 2 and 100 characters</span>
+              }
+            </div>
+          }
+      </div>
+      <div class="form-group">
+        <label for="name">Duration</label>
+        <input
+          class="form-control"
+          pInputText
+          [readOnly]="true"
+          formControlName="duration"
+          [value]="duration.value | formatDuration"
+          id="duration"/>
+      </div>
+      <div class="form-group">
+        <label for="releaseDate">Release Date</label>
+        <p-calendar
+          [inputStyleClass]="releaseDate.invalid && (releaseDate.touched || releaseDate.dirty || isFormSubmitted()) ? 'is-invalid' : ''"
+          styleClass="w-full"
+          formControlName="releaseDate"
+          iconDisplay="input"
+          [showIcon]="true"
+          [showClear]="true"
+          inputId="releaseDate"
+        />
+        @if (releaseDate.invalid && (releaseDate.touched || releaseDate.dirty || isFormSubmitted())) {
+          <div class="message-block">
+            @if (releaseDate.hasError('required')) {
+              <span class="error-message">Release Date is required</span>
+            } @else if (releaseDate.hasError('whitespaces')) {
+              <span class="error-message">Release Date cannot contain whitespaces</span>
+            }
+          </div>
+        }
+      </div>
+      <div class="form-group">
+        <label for="genres">Genres</label>
+        <p-multiSelect
+          appendTo="body"
+          styleClass="w-full"
+          [options]="genres()"
+          optionLabel="name"
+          optionValue="genreId"
+          formControlName="genreIds"
+          placeholder="Select genres"
+          [showClear]="true"
+          [selectAll]="false"
+          inputId="genres"
+        />
+        @if (genreIds.invalid && (genreIds.touched || genreIds.dirty || isFormSubmitted())) {
+          <div class="message-block">
+            <span class="error-message">At least one genre is required</span>
+          </div>
+        }
+      </div>
+      <div class="flex gap-4 span-2">
+        <div class="flex gap-2 align-items-center">
+          <p-radioButton
+            formControlName="isPrivate"
+            [value]=false
+            inputId="public"/>
+            <label for="public">Public</label>
+        </div>
+
+        <div class="flex gap-2 align-items-center">
+          <p-radioButton
+            formControlName="isPrivate"
+            [value]="true"
+            inputId="private"/>
+          <label for="private">Private</label>
+        </div>
+      </div>
+      <div class="span-2 align-self-end mt-4">
+        <p-button type="submit" styleClass="px-8" label="Upload" icon="pi pi-cloud-upload"></p-button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,4 +1,4 @@
-﻿using Application.InfrastructureInterfaces;
+﻿using Domain.Interfaces;
 using Domain.Primitives;
 using Microsoft.Extensions.Options;
 using System.Net;

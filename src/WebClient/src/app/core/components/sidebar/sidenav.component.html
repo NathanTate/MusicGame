@@ -1,0 +1,103 @@
+<aside class="sidenav" [attr.expanded]="expanded()">
+  <div #header class="sidenav-header flex justify-content-between">
+    <p-button [text]="true" (onClick)="expanded.set(!expanded())" styleClass="font-bold flex gap-2 p-2">
+      @if (expanded()) {
+        <span class="icon-wrapper">
+          <svg class="icon" data-encore-id="icon" role="img" aria-hidden="true" viewBox="0 0 24 24" class="Svg-sc-ytk21e-0 bneLcE">
+            <path d="M3 22a1 1 0 0 1-1-1V3a1 1 0 0 1 2 0v18a1 1 0 0 1-1 1zM15.5 2.134A1 1 0 0 0 14 3v18a1 1 0 0 0 1
+              1h6a1 1 0 0 0 1-1V6.464a1 1 0 0 0-.5-.866l-6-3.464zM9 2a1 1 0 0 0-1 1v18a1 1 0 1 0 2 0V3a1 1 0 0 0-1-1z">
+            </path>
+          </svg>
+        </span>
+        <span class="white-space-nowrap">My Library</span>
+      } @else {
+        <span class="icon-wrapper">
+          <svg data-encore-id="icon" role="img" aria-hidden="true" viewBox="0 0 24 24" class="Svg-sc-ytk21e-0 bneLcE">
+              <path d="M14.5 2.134a1 1 0 0 1 1 0l6 3.464a1 1 0 0 1 .5.866V21a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1V3a1 1 0 0 1
+              .5-.866zM16 4.732V20h4V7.041l-4-2.309zM3 22a1 1 0 0 1-1-1V3a1 1 0 0 1 2 0v18a1 1 0 0 1-1 1zm6 0a1 1 0 0 1-1-1V3a1 1 0 0 1 2 0v18a1 1 0 0 1-1 1z">
+            </path>
+          </svg>
+        </span>
+      }
+    </p-button>
+    @if (expanded()) {
+      <p-menu #menu [popup]="true" [model]="items()" appendTo="body">
+        <ng-template pTemplate="item" let-item>
+          <p-button [text]="true" styleClass="w-full flex gap-3 p-2">
+            <span class="icon-wrapper" style="--size: 16px">
+              <svg data-encore-id="icon" role="img" aria-hidden="true" viewBox="0 0 16 16" class="Svg-sc-ytk21e-0 dYnaPI">
+                <path d="M2 0v2H0v1.5h2v2h1.5v-2h2V2h-2V0H2zm11.5 2.5H8.244A5.482 5.482 0 0 0 7.966 1H15v11.75A2.75 2.75 0 1 1 
+                  12.25 10h1.25V2.5zm0 9h-1.25a1.25 1.25 0 1 0 1.25 1.25V11.5zM4 8.107a5.465 5.465 0 0 0 1.5-.593v5.236A2.75 2.75 0 1 1 2.75 10H4V8.107zM4 11.5H2.75A1.25 1.25 0 1 0 4 12.75V11.5z">
+                </path>
+              </svg>
+            </span>
+            <span class="white-space-nowrap">Add a playlist</span>
+          </p-button>
+        </ng-template>
+      </p-menu>
+      <p-button (onClick)="menu.toggle($event)" icon="pi pi-plus" [text]="true" [rounded]="true"></p-button>
+    }
+  </div>
+  <div class="sidenav-content scrollable scrollbar-vertical" appOverflowScroll="header">
+    @if (isLoading() && false) {
+      <ul>
+        @for (item of [].constructor(5); track $index) {
+          <li class="playlist-item flex align-items-center gap-3">
+            <p-skeleton shape="rounded" size="48px"></p-skeleton>
+            <div class="flex-1">
+              <p-skeleton width="80%" styleClass="mb-2"></p-skeleton>
+              <p-skeleton width="60%"></p-skeleton>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+    <ul role-list class="list-none">
+        @for (item of allPlaylists(); track item.playlistId) {
+          <li pRipple (contextmenu)="onContextMenu($event, item)" routerLink="playlist/{{item.playlistId}}" routerLinkActive="active" class="playlist-item flex align-items-center gap-3">
+            <div class="relative">
+              <div class="playlist-image-wrapper">
+                @if (item.photoUrl) {
+                  <img [src]="item.photoUrl" [alt]="item.name">
+                } @else {
+                  <div class="default-image">
+                    <span class="icon-wrapper">
+                      <svg data-encore-id="icon" role="img" aria-hidden="true" data-testid="playlist" class="Svg-sc-ytk21e-0 bneLcE" viewBox="0 0 24 24">
+                        <path d="M6 3h15v15.167a3.5 3.5 0 1 1-3.5-3.5H19V5H8v13.167a3.5 3.5 0 1 1-3.5-3.5H6V3zm0 13.667H4.5a1.5 1.5 0 1 0 1.5 1.5v-1.5zm13 0h-1.5a1.5 1.5 0 1 0 1.5 1.5v-1.5z">
+                        </path>
+                      </svg>
+                    </span>
+                  </div>
+                }
+              </div>
+            </div>
+            @if (expanded()) {
+              <div class="playlist-text">
+                <p class="x-lines-limit" [class.text-primary]="(audioService.state$ | async)?.playlist?.playlistId === item.playlistId">{{item.name}}</p>
+                <span class="text-white-alpha-40 text-sm x-lines-limit">Playlist • {{item.user.displayName}}</span>
+              </div>
+            }
+            @if (expanded()) {
+              <button class="play-hover-btn icon-wrapper" (click)="$event.stopPropagation(); onPlaylistPlay(item)">
+                @if ((audioService.state$ | async); as state)
+                {
+                  @if (state.playing && state.playlist?.playlistId === item.playlistId) {
+                    <svg data-encore-id="icon" role="img" aria-hidden="true" viewBox="0 0 24 24">
+                      <path d="M5.7 3a.7.7 0 0 0-.7.7v16.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V3.7a.7.7 0 0 0-.7-.7H5.7zm10 0a.7.7 0 0 0-.7.7v16.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V3.7a.7.7 0 0 0-.7-.7h-2.6z">
+                      </path>
+                   </svg>
+                  } @else {
+                    <svg data-encore-id="icon" role="img" aria-hidden="true" viewBox="0 0 24 24" >
+                      <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606z">
+                      </path>
+                    </svg>
+                  }
+                }
+              </button>
+            }
+          </li>
+        }
+    </ul>
+  </div>
+</aside>
+

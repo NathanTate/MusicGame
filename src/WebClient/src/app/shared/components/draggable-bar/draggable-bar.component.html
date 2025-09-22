@@ -1,0 +1,10 @@
+<div #progressBar class="progress-bar" tabindex="0">
+  <div class="progress-bg">
+    <div #progress class="progress">
+      <div #dragControl class="drag-control"></div>
+    </div>
+    @if(!isPointerDown()) {
+      {{updateBar()}}
+    }
+  </div>
+</div>

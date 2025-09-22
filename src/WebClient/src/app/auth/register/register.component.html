@@ -1,0 +1,87 @@
+<div class="min-h-screen flex justify-content-center align-items-center p-3">
+  <p-card class="w-full max-w-auth-card">
+    <img src="svgs/soundcloud.svg" class="h-5rem md:h-6rem mx-auto"/>
+    <h1 class="mt-0 mb-5 text-center text-2xl md:text-3xl">Register for Soundcloud</h1>
+    @if (error()) {
+      <div class="flex gap-3 align-items-center bg-red-400 px-4 py-2 mb-5 -mt-2 border-round-sm">
+        <i class="pi pi-info-circle" style="font-size: 1.25rem;"></i>
+        <span>{{error()}}</span>
+      </div>
+    }
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="w-full md:w-8 mx-auto">
+      <div class="form-group">
+        <label for="email">Email address</label>
+        <input 
+          [class.is-invalid]="email.invalid && (email.touched || email.dirty || isFormSubmitted())"
+          class="form-control" 
+          pInputText 
+          formControlName="email" 
+          id="email"/>
+          @if (email.invalid && (email.touched || email.dirty || isFormSubmitted())) {
+            <div class="message-block">
+              @if (email.hasError('required')) {
+                <span class="error-message">Email is required</span>
+              } @else if (email.hasError('email')) {
+                <span class="error-message">Please provide valid email</span>
+              } @else if (email.hasError('maxlength')) {
+                <span class="error-message">Email should be under 256 characters</span>
+              }
+            </div>
+          }
+      </div>
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input
+          [class.is-invalid]="username.invalid && (username.touched || username.dirty || isFormSubmitted())"
+          class="form-control"
+          pInputText
+          formControlName="username"
+          id="username"/>
+        @if (username.invalid && (username.touched || username.dirty || isFormSubmitted())) {
+          <div class="message-block">
+            @if (username.hasError('required')) {
+              <span class="error-message">Username is required</span>
+            } @else if (username.hasError('whitespaces')) {
+              <span class="error-message">Username cannot contain only whitespaces</span>
+            } @else if (username.hasError('maxlength')) {
+              <span class="error-message">Username should be under 100 characters long</span>
+            }
+          </div>
+        }
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <p-password 
+          [inputStyleClass]="(password.invalid && (password.touched || password.dirty || isFormSubmitted())) ? 'is-invalid w-full' : 'w-full'"
+          styleClass="w-full" 
+          [toggleMask]="true"
+          formControlName="password"
+          [mediumRegex]="mediumRegex"
+          [strongRegex]="strongRegex"
+          inputId="password">
+          
+          <ng-template pTemplate="footer">
+            <p-divider/>
+            <p class="mt-2">Requirements</p>
+            <ul class="pl-2 ml-2 mt-0" style="line-height: 1.5;">
+              <li>At least one lowercase</li>
+              <li>At least one uppercase</li>
+              <li>At least one numeric</li>
+              <li>At least one non-alphabetic</li>
+              <li>Minimum 6 characters</li>
+            </ul>
+          </ng-template>
+        </p-password>
+        @if (password.invalid && (password.touched || password.dirty || isFormSubmitted())) {
+          <div class="message-block">
+            <span class="error-message">Password is too weak</span>
+          </div>
+        }
+      </div>
+      <p-button type="submit" label="Sign Up" styleClass="w-full font-medium my-3"></p-button>
+    </form>
+    <div class="text-center">
+      <span>Already have an account? <a routerLink="/login">Sign In</a></span>
+    </div>
+  </p-card>
+</div>

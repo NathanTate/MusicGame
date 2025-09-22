@@ -1,0 +1,40 @@
+@import '../../../../_variables.scss';
+
+.x-card {
+  cursor: pointer;
+  background-color: hsl(0, 0%, 100%, .1);
+  transition: background-color 150ms ease-in-out;
+  border-radius: $global-border-radius;
+
+  &:hover {
+    background-color: hsl(0, 0%, 100%, .2);
+  }
+}
+
+.image-preview {
+  position: relative;
+  --image-size: 48px;
+  --size: var(--image-size);
+  height: var(--size);
+  width: var(--size);
+  border-radius: $global-border-radius 0 0 $global-border-radius;
+  background-color: var(--surface-50);
+
+  img {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: inherit;
+  }
+}
+
+@media (min-width: 1024px) {
+  .x-card {
+    .image-preview {
+      --size: calc(var(--image-size) + 14px) !important;
+    }
+  }
+}

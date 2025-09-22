@@ -28,6 +28,11 @@ internal class SongTypeConfig : IEntityTypeConfiguration<Song>
             .IsRequired();
 
         builder
+            .Property(b => b.ArtistName)
+            .HasMaxLength(100)
+            .IsRequired();
+
+        builder
             .Property(b => b.Url)
             .IsRequired();
 
@@ -47,6 +52,11 @@ internal class SongTypeConfig : IEntityTypeConfiguration<Song>
             .Property(b => b.ContentType)
             .HasMaxLength(30)
             .IsRequired();
+
+        builder
+           .Property(b => b.IsPrivate)
+           .HasDefaultValue(false)
+           .IsRequired(true);
 
         builder
             .Property(b => b.PhotoId)
@@ -79,22 +89,6 @@ internal class SongTypeConfig : IEntityTypeConfiguration<Song>
                    .HasOne<Genre>()
                    .WithMany()
                    .HasForeignKey("GenreId"),
-               j => j
-                   .HasOne<Song>()
-                   .WithMany()
-                   .HasForeignKey("SongId")
-           );
-
-        builder
-           .HasMany(b => b.UserLikes)
-           .WithMany(b => b.LikedSongs)
-           .UsingEntity<Dictionary<string, object>>(
-               "SongLike",
-               j => j
-                   .HasOne<User>()
-                   .WithMany()
-                   .HasForeignKey("UserId")
-                   .OnDelete(DeleteBehavior.NoAction),
                j => j
                    .HasOne<Song>()
                    .WithMany()

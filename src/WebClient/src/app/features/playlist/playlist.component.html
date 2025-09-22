@@ -1,0 +1,212 @@
+@let pl = playlist();
+
+<div class="layout" [style]="'--background-color:' + randomColor()">
+  <div *ngIf="state$ | async as state" class="h-full scrollable scrollbar-vertical" (scroll)="onScroll($event)">
+    @if (pl) {
+      <header class="main-header">
+        <div class="content h-full flex gap-2 align-items-center px-4">
+          @if (state.playing && state.playlist?.playlistId === pl.playlistId) {
+            <button class="play-button" (click)="onPause()">
+              <span class="icon-wrapper">
+                <svg data-encore-id="icon" role="img" aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M5.7 3a.7.7 0 0 0-.7.7v16.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V3.7a.7.7 0 0 0-.7-.7H5.7zm10 0a.7.7 0 0 0-.7.7v16.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V3.7a.7.7 0 0 0-.7-.7h-2.6z"></path>
+                </svg>
+              </span>
+            </button>
+          } @else {
+            <button class="play-button" (click)="onPlaylistPlay()">
+              <span class="icon-wrapper">
+                <svg data-encore-id="icon" role="img" aria-hidden="true" viewBox="0 0 24 24">
+                  <path fill="#000" d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606z">
+                  </path>
+                </svg>
+              </span>
+            </button>
+          } 
+          <h2 class="my-0 text-xl">{{pl.name}}</h2>
+        </div>
+      </header>
+      <section class="content-layout">
+        <section #contentHeader class="header">
+          <div class="content flex gap-4 align-items-end h-full px-4 py-3 lg:pb-4">
+            <div class="image-wrapper">
+              <img [src]="pl.photoUrl" alt="playlist image">
+              <div class="hover-content" (click)="openModal()">
+                <i class="pi pi-pencil text-4xl"></i>
+                <span class="font-medium">Choose a photo</span>
+              </div>
+            </div>
+            <div class="flex flex-column md:gap-1 lg:gap-2 text-xs md:text-sm lg:text-base">
+              <span class="text-sm lg:text-base font-medium">Playlist</span>
+              <h1 class="my-0 text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold">{{pl.name}}</h1>
+              @if (pl.description) {
+                <span class="x-lines-limit text-gray-200" style="--max-lines: 2">
+                  {{pl.description}}
+                </span>
+              }
+              <div class="flex align-items-center gap-1 text-sm mt-2 md:mt-1 lg:mt-0">
+                <span class="font-bold">{{pl.user.displayName}}</span>
+                <span class="text-gray-100">•</span>
+                <span class="text-gray-100">{{pl.songsCount}} Songs, {{pl.totalDuration | formatDuration}}</span>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="playlist-content">
+          <div [style]="'background-color:' + randomColor()" class="background-overlay"></div>
+          <div class="flex justify-content-between px-4 py-3 lg:py-4">
+            @if (state.playing && state.playlist?.playlistId === pl.playlistId) {
+              <button class="play-button text-black-alpha-90" (click)="onPause()">
+                <span class="icon-wrapper">
+                  <svg data-encore-id="icon" role="img" aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="M5.7 3a.7.7 0 0 0-.7.7v16.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V3.7a.7.7 0 0 0-.7-.7H5.7zm10 0a.7.7 0 0 0-.7.7v16.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V3.7a.7.7 0 0 0-.7-.7h-2.6z"></path>
+                  </svg>
+                </span>
+              </button>
+            } @else {
+              <button class="play-button" (click)="onPlaylistPlay()">
+                <span class="icon-wrapper">
+                  <svg data-encore-id="icon" role="img" aria-hidden="true" viewBox="0 0 24 24">
+                    <path fill="#000" d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606z">
+                    </path>
+                  </svg>
+                </span>
+              </button>
+            } 
+            <div>
+              <p-button (onClick)="menu.toggle($event)" text="true" styleClass="flex gap-2 align-items-center p-1 text-gray-100">
+                <span>{{ListFormat[listFormat()]}}</span>
+                <span class="icon-wrapper" style="--size: 16px">
+                  <svg data-encore-id="icon" role="img" aria-hidden="true" viewBox="0 0 16 16" class="Svg-sc-ytk21e-0 cAMMLk">
+                    <path d="M15 14.5H5V13h10v1.5zm0-5.75H5v-1.5h10v1.5zM15 3H5V1.5h10V3zM3 3H1V1.5h2V3zm0 11.5H1V13h2v1.5zm0-5.75H1v-1.5h2v1.5z">
+                    </path>
+                  </svg>
+                </span>
+              </p-button>
+              <p-menu #menu [popup]="true" [model]="items()" appendTo="body" styleClass="w-8rem">
+                <ng-template pTemplate="submenuheader" let-item>
+                  <span class="font-bold text-xs text-gray-100">{{ item.label }}</span>
+              </ng-template>
+              <ng-template pTemplate="item" let-item>
+                  <p-button (onClick)="setListFormat(item.format)" [text]="true" class="flex align-items-center p-0" styleClass="w-full">
+                      <span class="text-sm text-gray-100" [class]="item.icon"></span>
+                      <span class="ml-2 text-sm text-gray-100" [class.control-active]="item.format === listFormat()">{{ item.label }}</span>
+                  </p-button>
+              </ng-template>
+              </p-menu>
+            </div>
+          </div>
+          <div class="px-4">
+              <p-table
+                [value]="pl.songs"
+                [rowTrackBy]="trackByFn"
+                [autoLayout]="true"
+                [tableStyle]="{'min-width': '50rem'}"
+                >
+                <ng-template pTemplate="header">
+                  <tr class="bg-transparent">
+                    <th class="pl-4">#</th>
+                    <th>Name</th>
+                    @if (listFormat() === ListFormat.Compact) {
+                      <th>Uploaded By</th>
+                    }
+                    @if (pl.user.email === authService.authData()?.email) {
+                      <th>Is Private</th>
+                    }
+                    <th>Release date</th>
+                    <th><i class="pi pi-heart"></i></th>
+                    <th class="text-right pr-3 lg:pr-6"><i class="pi pi-clock"></i></th>
+                  </tr>
+                  <div class="p-2"></div>
+                </ng-template>
+                <ng-template pTemplate="body" let-plSong>
+                  <tr (contextmenu)="onContextMenu($event, plSong.song, playlist())" class="bg-transparent x-border-none br-global cursor-pointer hover:surface-hover focus:surface-300 text-sm" (dblclick)="setSong(plSong.song)">
+                    <td class="relative pl-4 w-3rem">
+                      @if (state.playing && state.song?.songId === plSong.song.songId && state.playlist?.playlistId === pl.playlistId) {
+                        <p-button (onClick)="onPause()" icon="pi pi-pause" [text]="true" size="small" styleClass="p-0 w-auto" class="play-pause-button reveal-on-hover"></p-button>
+                        <img width="14" height="14" class="hover:hidden" src="https://open.spotifycdn.com/cdn/images/equaliser-animated-green.f5eb96f2.gif"/>
+                      } @else {
+                        <span class="text-base" [class.text-primary]="plSong.song.songId === state.song?.songId && state.playlist?.playlistId === pl.playlistId">{{ plSong.position }}</span>
+                        <p-button (onClick)="onPlay(plSong.song)" [text]="true" styleClass="p-0" class="play-pause-button reveal-on-hover">
+                          <span class="icon-wrapper" style="--size: 16px">
+                            <svg data-encore-id="icon" role="img" aria-hidden="true" viewBox="0 0 24 24">
+                              <path d="m7.05 3.606 13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606z"></path>
+                            </svg>
+                          </span>
+                        </p-button>
+                      }
+                    </td>
+                    <td>
+                      <div class="flex gap-3">
+                        @if(listFormat() === ListFormat.List) {
+                          <div class="image-wrapper">
+                            @if (plSong.song.photoUrl) {
+                              <img width="48px" height="48px" [src]="plSong.song.photoUrl" [alt]="plSong.song.name">
+                            }
+                          </div>
+                        }
+                        <div class="flex flex-column justify-content-center">
+                          <span class="font-semibold text-base" [class.text-primary]="plSong.song.songId === state.song?.songId && state.playlist?.playlistId === pl.playlistId">{{ plSong.song.name }}</span>
+                          @if (listFormat() === ListFormat.List) {
+                            <span class="font-medium text-gray-200">{{ plSong.song.artist.displayName }}</span>
+                          }            
+                        </div>
+                      </div>
+                    </td>
+                    @if (listFormat() === ListFormat.Compact) {
+                      <td>
+                        {{ plSong.song.artist.displayName }}
+                      </td>
+                    } 
+                    @if (pl.user.email === authService.authData()?.email) {
+                      <td>
+                        {{ plSong.song.isPrivate }}
+                      </td>
+                    }
+                    <td>
+                      {{ plSong.song.releaseDate | date: 'longDate'}}
+                    </td>
+                    <td>
+                      {{ plSong.song.likesCount }}
+                    </td>
+                    <td class="pr-2 lg:pr-3">
+                      <div class="flex gap-2 justify-content-end align-items-center">
+                        <div>{{ plSong.song.duration | formatDuration}}</div>
+                        @if (pl.user.email === authService.authData()?.email) {
+                          <div>
+                            <p-button (onClick)="onContextMenu($event, plSong.song)" icon="pi pi-ellipsis-h" [text]="true" styleClass="p-1 w-auto h-auto" class="reveal-on-hover">
+                            </p-button>
+                          </div>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                </ng-template>
+                  <ng-template pTemplate="emptymessage">
+                    @if (pl.user.userId === authService.authData()?.userId) {
+                    <tr class="bg-transparent x-border-none">
+                      <td colspan="7">
+                        <div class="flex flex-column gap-3">
+                          <h2 class="my-0 text-xl md:text-2xl xl:text-3xl font-bold">Let's find something for your playlist</h2>
+                          <p-iconField iconPosition="left">
+                            <p-inputIcon styleClass="pi pi-search" />
+                            <input type="text" pInputText placeholder="Search" />
+                          </p-iconField>
+                        </div>
+                      </td>
+                    </tr>
+                  } @else {
+                      <tr class="bg-transparent x-border-none">
+                        <td colspan="7">
+                          <h2 class="my-0 text-xl md:text-2xl xl:text-3xl font-bold">This playlist has no songs</h2>
+                        </td>
+                      </tr>
+                    }
+                  </ng-template>
+              </p-table>
+          </div>
+        </section>
+      </section>
+    }
+  </div>
+</div>

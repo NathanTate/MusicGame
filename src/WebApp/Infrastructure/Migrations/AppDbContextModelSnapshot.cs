@@ -120,6 +120,10 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime?>("DeletedOnUtc")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
                     b.Property<bool>("IsPrivate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -136,11 +140,6 @@ namespace Infrastructure.Migrations
                     b.Property<int?>("PhotoId")
                         .HasColumnType("int");
 
-                    b.Property<int>("SongsCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(0);
-
                     b.Property<int>("TotalDuration")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
@@ -155,6 +154,8 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("PlaylistId");
 
+                    b.HasIndex("Name");
+
                     b.HasIndex("PhotoId");
 
                     b.HasIndex("UserId");
@@ -165,6 +166,44 @@ namespace Infrastructure.Migrations
                     b.ToTable("Playlists");
                 });
 
+            modelBuilder.Entity("Domain.Entities.PlaylistLike", b =>
+                {
+                    b.Property<int>("PlaylistId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("PlaylistId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PlaylistLike");
+                });
+
+            modelBuilder.Entity("Domain.Entities.PlaylistSong", b =>
+                {
+                    b.Property<int>("PlaylistId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SongId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Position")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
+                    b.HasKey("PlaylistId", "SongId");
+
+                    b.HasIndex("SongId");
+
+                    b.ToTable("PlaylistSong");
+                });
+
             modelBuilder.Entity("Domain.Entities.Song", b =>
                 {
                     b.Property<int>("SongId")
@@ -172,6 +211,11 @@ namespace Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SongId"));
+
+                    b.Property<string>("ArtistName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("ContentType")
                         .IsRequired()
@@ -186,6 +230,11 @@ namespace Infrastructure.Migrations
 
                     b.Property<int>("Duration")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsPrivate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<int>("LikesCount")
                         .ValueGeneratedOnAdd()
@@ -231,6 +280,24 @@ namespace Infrastructure.Migrations
                         .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("Songs");
+                });
+
+            modelBuilder.Entity("Domain.Entities.SongLike", b =>
+                {
+                    b.Property<int>("SongId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("SongId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("SongLike");
                 });
 
             modelBuilder.Entity("Domain.Entities.User", b =>
@@ -460,36 +527,6 @@ namespace Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("PlaylistLike", b =>
-                {
-                    b.Property<int>("PlaylistId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(128)");
-
-                    b.HasKey("PlaylistId", "UserId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("PlaylistLike");
-                });
-
-            modelBuilder.Entity("PlaylistSong", b =>
-                {
-                    b.Property<int>("PlaylistId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("SongId")
-                        .HasColumnType("int");
-
-                    b.HasKey("PlaylistId", "SongId");
-
-                    b.HasIndex("SongId");
-
-                    b.ToTable("PlaylistSong");
-                });
-
             modelBuilder.Entity("SongGenre", b =>
                 {
                     b.Property<int>("GenreId")
@@ -503,21 +540,6 @@ namespace Infrastructure.Migrations
                     b.HasIndex("SongId");
 
                     b.ToTable("SongGenre");
-                });
-
-            modelBuilder.Entity("SongLike", b =>
-                {
-                    b.Property<int>("SongId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(128)");
-
-                    b.HasKey("SongId", "UserId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("SongLike");
                 });
 
             modelBuilder.Entity("Domain.Entities.Photo", b =>
@@ -547,6 +569,44 @@ namespace Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Domain.Entities.PlaylistLike", b =>
+                {
+                    b.HasOne("Domain.Entities.Playlist", "Playlist")
+                        .WithMany("UserLikes")
+                        .HasForeignKey("PlaylistId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.User", "User")
+                        .WithMany("LikedPlaylists")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Playlist");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Domain.Entities.PlaylistSong", b =>
+                {
+                    b.HasOne("Domain.Entities.Playlist", "Playlist")
+                        .WithMany("Songs")
+                        .HasForeignKey("PlaylistId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.Song", "Song")
+                        .WithMany("Playlists")
+                        .HasForeignKey("SongId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Playlist");
+
+                    b.Navigation("Song");
+                });
+
             modelBuilder.Entity("Domain.Entities.Song", b =>
                 {
                     b.HasOne("Domain.Entities.Photo", "Photo")
@@ -561,6 +621,25 @@ namespace Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Photo");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Domain.Entities.SongLike", b =>
+                {
+                    b.HasOne("Domain.Entities.Song", "Song")
+                        .WithMany("UserLikes")
+                        .HasForeignKey("SongId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.User", "User")
+                        .WithMany("LikedSongs")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Song");
 
                     b.Navigation("User");
                 });
@@ -616,36 +695,6 @@ namespace Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("PlaylistLike", b =>
-                {
-                    b.HasOne("Domain.Entities.Playlist", null)
-                        .WithMany()
-                        .HasForeignKey("PlaylistId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("PlaylistSong", b =>
-                {
-                    b.HasOne("Domain.Entities.Playlist", null)
-                        .WithMany()
-                        .HasForeignKey("PlaylistId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Entities.Song", null)
-                        .WithMany()
-                        .HasForeignKey("SongId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("SongGenre", b =>
                 {
                     b.HasOne("Domain.Entities.Genre", null)
@@ -661,21 +710,6 @@ namespace Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("SongLike", b =>
-                {
-                    b.HasOne("Domain.Entities.Song", null)
-                        .WithMany()
-                        .HasForeignKey("SongId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("Domain.Entities.Photo", b =>
                 {
                     b.Navigation("Playlists");
@@ -683,8 +717,26 @@ namespace Infrastructure.Migrations
                     b.Navigation("Songs");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Playlist", b =>
+                {
+                    b.Navigation("Songs");
+
+                    b.Navigation("UserLikes");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Song", b =>
+                {
+                    b.Navigation("Playlists");
+
+                    b.Navigation("UserLikes");
+                });
+
             modelBuilder.Entity("Domain.Entities.User", b =>
                 {
+                    b.Navigation("LikedPlaylists");
+
+                    b.Navigation("LikedSongs");
+
                     b.Navigation("Photo");
 
                     b.Navigation("Playlists");

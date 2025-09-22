@@ -1,0 +1,119 @@
+@import '../../../variables';
+
+.layout {
+  --header-opacity: 0;
+  --header-content-opacity: 0;
+  --background-color: 60, 60, 60;
+  height: 100%;
+  width: 100%;
+  border-radius: $global-border-radius;
+  background-color: var(--surface-card);
+  overflow-x: hidden;
+  position: relative;
+
+  .chores {
+    max-width: 40ch;
+    text-wrap: balance;
+  }
+
+  .main-header {
+    position: absolute;
+    top: 0;
+    padding-block: 8px;
+    width: calc(100% - $scrollbar-width);
+    border-radius: $global-border-radius $global-border-radius 0 0;
+    background-color: rgba(var(--background-color), var(--header-opacity));
+    z-index: 100;
+    transition: background-color 300ms ease-out;
+
+    .content {
+      opacity: var(--header-content-opacity);
+      transition: opacity 150ms ease-in-out;
+    }
+  }
+
+  .content-layout {
+    display: grid;
+  }
+
+  .image-wrapper {
+    position: relative;
+    flex-shrink: 0;
+    --size: 48px;
+    width: var(--size, 48px);
+    height: var(--size, 48px);
+    border-radius: $global-border-radius;
+    background-color: var(--surface-100);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .5);
+
+    &.rounded {
+      border-radius: 100000px;
+    }
+
+    &:hover {
+      cursor: pointer;
+
+      .hover-content {
+        opacity: 1;
+      }
+    }
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: inherit;
+    }
+
+    .hover-content {
+      opacity: 0;
+      color: var(--primary-color);
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      justify-content: center;
+      align-items: center;
+      background-color: rgba(25, 25, 25, 0.3);
+    }
+  }
+
+
+  .header {
+    position: relative;
+    min-height: min(20vw, 260px);
+    background: linear-gradient(transparent 0, rgba(0, 0, 0, 0.5) 100%);
+    background-color: rgba(var(--background-color));
+  }
+
+
+  .track-content {
+    position: relative;
+    z-index: 0;
+    height: 20rem;
+
+    .background-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: clamp(128px, 12vw, 252px);
+      z-index: -1;
+      background: linear-gradient(rgba(0, 0, 0, .6) 0, var(--surface-card) 100%);
+      background-color: rgb(var(--background-color));
+    }
+
+    .reveal-on-hover {
+      opacity: 0;
+    }
+
+    .play-pause-button {
+      position: absolute;
+      top: 50%;
+      left: 1.25rem;
+      transform: translateY(-50%);
+      z-index: 2;
+    }
+  }
+}

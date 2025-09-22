@@ -1,10 +1,13 @@
-﻿using Application.DTO.Users;
-using Application.InfrastructureInterfaces;
+﻿using Application.Common.Helpers;
+using Application.Models.Users;
+using Application.Errors;
 using Domain.Entities;
 using Domain.Enums;
+using Domain.Interfaces;
 using Domain.Primitives;
 using FluentResults;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -12,6 +15,9 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using AutoMapper;
+using Application.Services.Elastic;
+using Application.Models.Elastic;
 
 namespace Application.Services.Auth;
 internal class AuthenticationService : IAuthenticationService
@@ -20,12 +26,17 @@ internal class AuthenticationService : IAuthenticationService
     private readonly JwtOptions _jwtOptions;
     private readonly IEmailSender _emailSender;
     private readonly ILogger<AuthenticationService> _logger;
-    public AuthenticationService(UserManager<User> userManager, ILogger<AuthenticationService> logger, IOptions<JwtOptions> jwtOptions, IEmailSender emailSender)
+    private readonly IMapper _mapper;
+    private readonly UsersElasticService _elasticService;
+    public AuthenticationService(UserManager<User> userManager, ILogger<AuthenticationService> logger, IOptions<JwtOptions> jwtOptions,
+        IEmailSender emailSender, IMapper mapper, UsersElasticService elasticService)
     {
         _userManager = userManager;
         _jwtOptions = jwtOptions.Value;
         _emailSender = emailSender;
         _logger = logger;
+        _mapper = mapper;
+        _elasticService = elasticService;
     }
 
     public async Task<Result<string>> RegisterAsync(RegisterRequest model, CancellationToken cancellationToken = default)
@@ -40,13 +51,13 @@ internal class AuthenticationService : IAuthenticationService
         var result = await _userManager.CreateAsync(user, model.Password);
         if (!result.Succeeded)
         {
-            return Result.Fail(result.Errors.Select(err => err.Description));
+            return ResultHelper.ErrorsToResult(result.Errors);
         }
 
-        var roleResult = await _userManager.AddToRoleAsync(user, nameof(Roles.USER));
+        var roleResult = await _userManager.AddToRoleAsync(user, nameof(Role.USER));
         if (!roleResult.Succeeded)
         {
-            return Result.Fail(roleResult.Errors.Select(err => err.Description));
+            return ResultHelper.ErrorsToResult(roleResult.Errors);
         }
 
         await SendConfirmationEmailAsync(user, cancellationToken);
@@ -56,28 +67,30 @@ internal class AuthenticationService : IAuthenticationService
 
     public async Task<Result<LoginResponse>> LoginAsync(LoginRequest model, CancellationToken cancellationToken = default)
     {
-        var user = await _userManager.FindByEmailAsync(model.Email.ToUpper());
-        
+        var user = await _userManager.Users
+            .Include(u => u.Photo)
+            .SingleOrDefaultAsync(u => u.NormalizedEmail == model.Email.ToUpper());
+
         if (user is null)
-        { 
-            return Result.Fail("Invalid Email or Password"); 
+        {
+            return new ValidationError("Invalid Email or Password");
         }
 
         if (!await _userManager.CheckPasswordAsync(user, model.Password))
         {
-            return Result.Fail("Invalid Email or Password");
+            return new ValidationError("Invalid Email or Password");
         }
-           
+
         if (!await _userManager.IsEmailConfirmedAsync(user))
         {
-            return Result.Fail("Email confirmation needed");
-        }    
-        
-        Result<TokenDto> result = await CreateTokenAsync(user, populateExp: true, cancellationToken);
+            return new ValidationError("Invalid Email or Password");
+        }
+
+        Result<TokenWrapper> result = await CreateTokenAsync(user, populateExp: true, cancellationToken);
 
         if (result.IsFailed)
         {
-            return Result.Fail(result.Errors);
+            return ResultHelper.ErrorsToResult(result.Errors);
         }
 
         var loginResponse = new LoginResponse(user, result.Value);
@@ -85,14 +98,14 @@ internal class AuthenticationService : IAuthenticationService
         return loginResponse;
     }
 
-    public async Task<Result<TokenDto>> CreateTokenAsync(User user, bool populateExp = true, CancellationToken cancellationToken = default)
+    public async Task<Result<TokenWrapper>> CreateTokenAsync(User user, bool populateExp = true, CancellationToken cancellationToken = default)
     {
         user.Roles = [.. (await _userManager.GetRolesAsync(user))];
 
-        TokenBase accessToken = GenerateToken(user);
+        TokenDto accessToken = GenerateToken(user);
         string refreshTokenString = GenerateRefreshToken();
-        var refreshTokenExpiresAt = populateExp 
-            ? DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpiresInDays) 
+        var refreshTokenExpiresAt = populateExp
+            ? DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpiresInDays)
             : user.RefreshTokenExpiryTime ?? DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpiresInDays);
 
 
@@ -103,71 +116,70 @@ internal class AuthenticationService : IAuthenticationService
 
         if (!result.Succeeded)
         {
-            return Result.Fail(result.Errors.Select(err => err.Description));
+            return ResultHelper.ErrorsToResult(result.Errors);
         }
 
-        var refreshToken = new TokenBase(refreshTokenString, refreshTokenExpiresAt);
+        var refreshToken = new TokenDto(refreshTokenString, refreshTokenExpiresAt);
 
-        return new TokenDto(accessToken, refreshToken);
+        return new TokenWrapper(accessToken, refreshToken);
     }
 
-    public async Task<Result<TokenDto>> RefreshTokenAsync(TokenDto model, CancellationToken cancellationToken = default)
+    public async Task<Result<TokenWrapper>> RefreshTokenAsync(TokenDto refreshToken, CancellationToken cancellationToken = default)
     {
-        TokenBase accessToken = model.AccessToken;
-        TokenBase refreshToken = model.RefreshToken;
+        //Result<ClaimsIdentity> result = await GetIdentityFromExpiredTokenAsync(accessToken.Token);
 
-        Result<ClaimsIdentity> result = await GetIdentityFromExpiredTokenAsync(accessToken.Token);
+        //if (result.IsFailed)
+        //{
+        //    return ResultHelper.ErrorsToResult(result.Errors);
+        //}
 
-        if (result.IsFailed)
-        {
-            return Result.Fail(result.Errors);
-        }
+        //var claimsIdentity = result.Value;
+        //var user = await _userManager.GetUserAsync(new ClaimsPrincipal(claimsIdentity));
 
-        var claimsIdentity = result.Value;
-        var user = await _userManager.GetUserAsync(new ClaimsPrincipal(claimsIdentity));
+        var user = await _userManager.Users.FirstOrDefaultAsync(x => x.RefreshToken == refreshToken.Token);
 
         if (isRefreshTokenInvalid())
         {
-            return Result.Fail("Refresh token is invalid or expired");
+            return new ValidationError("Refresh token is invalid or expired");
         }
 
         return await CreateTokenAsync(user!, populateExp: false, cancellationToken);
 
-        bool isRefreshTokenInvalid() => user is null || user.RefreshToken != refreshToken.Token 
+        bool isRefreshTokenInvalid() => user is null || user.RefreshToken != refreshToken.Token
             || user.RefreshTokenExpiryTime < DateTime.UtcNow;
     }
 
-    public async Task<Result<ClaimsIdentity>> GetIdentityFromExpiredTokenAsync(string accessToken, CancellationToken cancellationToken = default)
-    {
-        var tokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuerSigningKey = true,
-            ValidateLifetime = false,
-            ValidateIssuer = false,
-            ValidateAudience = false,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.SecurityKey)),
-            ClockSkew = TimeSpan.FromSeconds(30)
-        };
+    //public async Task<Result<ClaimsIdentity>> GetIdentityFromExpiredTokenAsync(string accessToken, CancellationToken cancellationToken = default)
+    //{
+    //    var tokenValidationParameters = new TokenValidationParameters
+    //    {
+    //        ValidateIssuerSigningKey = true,
+    //        ValidateLifetime = false,
+    //        ValidateIssuer = false,
+    //        ValidateAudience = false,
+    //        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.SecurityKey)),
+    //        ClockSkew = TimeSpan.FromSeconds(30)
+    //    };
 
-        var tokenHanlder = new JwtSecurityTokenHandler();
+    //    var tokenHanlder = new JwtSecurityTokenHandler();
 
-        TokenValidationResult validationResult = await tokenHanlder.ValidateTokenAsync(accessToken, tokenValidationParameters);
+    //    TokenValidationResult validationResult = await tokenHanlder.ValidateTokenAsync(accessToken, tokenValidationParameters);
 
-        if (!validationResult.IsValid)
-        {
-            return Result.Fail("Invalid Token");
-        }
+    //    if (!validationResult.IsValid)
+    //    {
+    //        return new ValidationError("Invalid Token");
+    //    }
 
-        var jwtSecurityToken = validationResult.SecurityToken as JwtSecurityToken;
+    //    var jwtSecurityToken = validationResult.SecurityToken as JwtSecurityToken;
 
-        if (jwtSecurityToken is null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha512, StringComparison.InvariantCultureIgnoreCase))
-        {
-            return Result.Fail("Invalid Token");
-        }
+    //    if (jwtSecurityToken is null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha512, StringComparison.InvariantCultureIgnoreCase))
+    //    {
+    //        return new ValidationError("Invalid Token");
+    //    }
 
-        return validationResult.ClaimsIdentity;
+    //    return validationResult.ClaimsIdentity;
 
-    }
+    //}
 
     public async Task<Result> ConfirmEmailAsync(ConfirmEmailRequest model, CancellationToken cancellationToken = default)
     {
@@ -175,15 +187,17 @@ internal class AuthenticationService : IAuthenticationService
 
         if (user is null)
         {
-            return Result.Fail("User doesn't exist");
+            return new NotFoundError("User cannot be found");
         }
 
         var result = await _userManager.ConfirmEmailAsync(user, model.Token);
 
         if (!result.Succeeded)
         {
-            return Result.Fail(result.Errors.Select(err => err.Description));
+            return ResultHelper.ErrorsToResult(result.Errors);
         }
+
+        await _elasticService.AddOrUpdateAsync(_mapper.Map<UserDoc>(user), ElasticIndex.UsersIndex, cancellationToken);
 
         return Result.Ok();
     }
@@ -194,12 +208,12 @@ internal class AuthenticationService : IAuthenticationService
 
         if (user is null)
         {
-            return Result.Fail("User doesn't exist");
+            return new NotFoundError("User cannot be found");
         }
 
         if (await _userManager.IsEmailConfirmedAsync(user))
         {
-            return Result.Fail("Email is already confirmed");
+            return new ValidationError("Email is already confirmed");
         }
 
         await SendConfirmationEmailAsync(user, cancellationToken);
@@ -213,14 +227,14 @@ internal class AuthenticationService : IAuthenticationService
 
         if (user is null)
         {
-            return Result.Fail("User doesn't exist");
+            return new NotFoundError("User cannot be found");
         }
 
         var result = await _userManager.ResetPasswordAsync(user, model.ResetCode, model.NewPassword);
 
         if (!result.Succeeded)
         {
-            return Result.Fail(result.Errors.Select(err => err.Description));
+            return ResultHelper.ErrorsToResult(result.Errors);
         }
 
         return Result.Ok();
@@ -232,21 +246,21 @@ internal class AuthenticationService : IAuthenticationService
 
         if (user is null)
         {
-            return Result.Fail("User doesn't exist");
+            return new NotFoundError("User cannot be found");
         }
 
         var resetPasswordCode = await _userManager.GeneratePasswordResetTokenAsync(user);
 
         await _emailSender.SendAsync(
-            user.Email, 
-            "Password Reset", 
-            $"Enter the code to proceed: {resetPasswordCode}", 
+            user.Email,
+            "Password Reset",
+            $"Enter the code to proceed: {resetPasswordCode}",
             cancellationToken: cancellationToken);
 
         return Result.Ok();
     }
 
-    private TokenBase GenerateToken(User user)
+    private TokenDto GenerateToken(User user)
     {
         var _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.SecurityKey));
 
@@ -272,7 +286,7 @@ internal class AuthenticationService : IAuthenticationService
 
         SecurityToken token = tokenHandler.CreateToken(serucityTokenDescriptor);
 
-        TokenBase accessToken = new TokenBase(tokenHandler.WriteToken(token), ExpiresAt);
+        TokenDto accessToken = new TokenDto(tokenHandler.WriteToken(token), ExpiresAt);
 
         return accessToken;
     }
@@ -293,12 +307,11 @@ internal class AuthenticationService : IAuthenticationService
         var emailVerificationToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
 
         var url = $"Click this link for verification https://localhost:7221/account/verifyEmail?token={emailVerificationToken}&email={user.Email}";
-        
+
         await _emailSender.SendAsync(
-            user.Email, 
-            "Email Verification", 
+            user.Email,
+            "Email Verification",
             url,
             cancellationToken: cancellationToken);
     }
-
 }

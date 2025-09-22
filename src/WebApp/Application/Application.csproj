@@ -7,19 +7,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Common\Exceptions\**" />
+    <EmbeddedResource Remove="Common\Exceptions\**" />
+    <None Remove="Common\Exceptions\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AutoMapper" Version="13.0.1" />
+    <PackageReference Include="Elastic.Clients.Elasticsearch" Version="8.17.1" />
     <PackageReference Include="FluentResults" Version="3.16.0" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.10.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
+    <PackageReference Include="GeniusLyrics.NET" Version="1.0.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Common\Exceptions\" />
-    <Folder Include="DTO\Playlists\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Domain\Domain.csproj" />
+    <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
