@@ -15,11 +15,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Add loggin configurations
 
 builder.Logging.AddAzureWebAppDiagnostics();
-builder.Services.Configure<AzureFileLoggerOptions>(options =>
+
+builder.Services.Configure<AzureBlobLoggerOptions>(options =>
 {
-    options.FileName = "logs-";
-    options.FileSizeLimit = 50 * 1024;
-    options.RetainedFileCountLimit = 5;
+    options.BlobName = "logs/log.txt";
 });
 
 // Add services to the container.
