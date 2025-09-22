@@ -30,7 +30,7 @@ jobs:
           # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
           app_location: "src/WebClient" # App source code path
           api_location: "" # Api source code path - optional
-          output_location: "dist/web-client/browser" # Built app content directory - optional
+          output_location: "dist/web-client/browser/browser" # Built app content directory - optional
           app_build_command: "npm install && npx ng build --configuration production --output-path=dist/web-client/browser"
           ###### End of Repository/Build Configurations ######
 
@@ -45,6 +45,7 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_MANGO_COAST_09BE74403 }}
           action: "close"
+
 
 
 
