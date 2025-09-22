@@ -190,7 +190,7 @@ namespace Infrastructure.Migrations
                     ContentType = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
                     isDeleted = table.Column<bool>(type: "bit", nullable: false),
                     DeletedOnUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    UserId = table.Column<string>(type: "nvarchar(128)", nullable: false)
+                    UserId = table.Column<string>(type: "nvarchar(128)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -199,8 +199,7 @@ namespace Infrastructure.Migrations
                         name: "FK_Photos_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -210,9 +209,9 @@ namespace Infrastructure.Migrations
                     PlaylistId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: true),
                     IsPrivate = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     TotalDuration = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
-                    SongsCount = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
                     LikesCount = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     isDeleted = table.Column<bool>(type: "bit", nullable: false),
@@ -233,7 +232,8 @@ namespace Infrastructure.Migrations
                         name: "FK_Playlists_Photos_PhotoId",
                         column: x => x.PhotoId,
                         principalTable: "Photos",
-                        principalColumn: "PhotoId");
+                        principalColumn: "PhotoId",
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
@@ -243,11 +243,13 @@ namespace Infrastructure.Migrations
                     SongId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    ArtistName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Url = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     LikesCount = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
                     Duration = table.Column<int>(type: "int", nullable: false),
                     Size = table.Column<long>(type: "bigint", nullable: false),
                     ContentType = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    IsPrivate = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     ReleaseDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     isDeleted = table.Column<bool>(type: "bit", nullable: false),
@@ -268,7 +270,8 @@ namespace Infrastructure.Migrations
                         name: "FK_Songs_Photos_PhotoId",
                         column: x => x.PhotoId,
                         principalTable: "Photos",
-                        principalColumn: "PhotoId");
+                        principalColumn: "PhotoId",
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
@@ -276,7 +279,8 @@ namespace Infrastructure.Migrations
                 columns: table => new
                 {
                     PlaylistId = table.Column<int>(type: "int", nullable: false),
-                    UserId = table.Column<string>(type: "nvarchar(128)", nullable: false)
+                    UserId = table.Column<string>(type: "nvarchar(128)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -285,13 +289,13 @@ namespace Infrastructure.Migrations
                         name: "FK_PlaylistLike_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_PlaylistLike_Playlists_PlaylistId",
                         column: x => x.PlaylistId,
                         principalTable: "Playlists",
-                        principalColumn: "PlaylistId",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "PlaylistId");
                 });
 
             migrationBuilder.CreateTable(
@@ -299,7 +303,8 @@ namespace Infrastructure.Migrations
                 columns: table => new
                 {
                     PlaylistId = table.Column<int>(type: "int", nullable: false),
-                    SongId = table.Column<int>(type: "int", nullable: false)
+                    SongId = table.Column<int>(type: "int", nullable: false),
+                    Position = table.Column<int>(type: "int", nullable: false, defaultValue: 1)
                 },
                 constraints: table =>
                 {
@@ -308,13 +313,13 @@ namespace Infrastructure.Migrations
                         name: "FK_PlaylistSong_Playlists_PlaylistId",
                         column: x => x.PlaylistId,
                         principalTable: "Playlists",
-                        principalColumn: "PlaylistId",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "PlaylistId");
                     table.ForeignKey(
                         name: "FK_PlaylistSong_Songs_SongId",
                         column: x => x.SongId,
                         principalTable: "Songs",
-                        principalColumn: "SongId");
+                        principalColumn: "SongId",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -346,7 +351,8 @@ namespace Infrastructure.Migrations
                 columns: table => new
                 {
                     SongId = table.Column<int>(type: "int", nullable: false),
-                    UserId = table.Column<string>(type: "nvarchar(128)", nullable: false)
+                    UserId = table.Column<string>(type: "nvarchar(128)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -355,13 +361,13 @@ namespace Infrastructure.Migrations
                         name: "FK_SongLike_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_SongLike_Songs_SongId",
                         column: x => x.SongId,
                         principalTable: "Songs",
-                        principalColumn: "SongId",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "SongId");
                 });
 
             migrationBuilder.CreateIndex(
@@ -438,7 +444,8 @@ namespace Infrastructure.Migrations
                 name: "IX_Photos_UserId",
                 table: "Photos",
                 column: "UserId",
-                unique: true);
+                unique: true,
+                filter: "[UserId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PlaylistLike_UserId",
@@ -450,6 +457,11 @@ namespace Infrastructure.Migrations
                 table: "Playlists",
                 column: "isDeleted",
                 filter: "[IsDeleted] = 0");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Playlists_Name",
+                table: "Playlists",
+                column: "Name");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Playlists_PhotoId",
