@@ -20,7 +20,7 @@
           "options": {
             "outputPath": "dist/web-client",
             "index": "src/index.html",
-            "browser": "",
+            "browser": "src/main.ts",
             "polyfills": [
               "zone.js"
             ],
