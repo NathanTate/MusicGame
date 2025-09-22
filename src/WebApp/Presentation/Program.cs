@@ -6,73 +6,102 @@ using Infrastructure.Context;
 using Infrastructure.Seed;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.AzureAppServices;
 using Presentation.Extensions;
 using Presentation.Middleware;
 
-var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-builder.Services.AddPresentation();
-builder.Services.AddApplicationLayer(builder.Configuration, builder.Environment);
-builder.Services.AddInfrastructureLayer(builder.Configuration);
-builder.Services.AddCors(options =>
+try
 {
-    options.AddPolicy("Default", policy =>
+    var builder = WebApplication.CreateBuilder(args);
+
+
+
+    // Add loggin configurations
+
+    builder.Logging.AddAzureWebAppDiagnostics();
+
+    builder.Services.Configure<AzureBlobLoggerOptions>(options =>
     {
-        policy.WithOrigins("http://localhost:4200")
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-        .AllowCredentials();
+        options.BlobName = "logs/log.txt";
     });
-});
 
-var app = builder.Build();
+    // Add services to the container.
 
-app.UseExceptionHandlerMw();
+    builder.Services.AddControllers();
+    // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen();
+    builder.Services.AddPresentation();
+    builder.Services.AddApplicationLayer(builder.Configuration, builder.Environment);
+    builder.Services.AddInfrastructureLayer(builder.Configuration);
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    var origins = new List<string>();
 
-app.UseHttpsRedirection();
-
-app.UseStaticFiles();
-
-app.UseCors("Default");
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllers();
-
-await SeedData();
-
-app.Run();
-
-async Task SeedData()
-{
-    using (var scope = app.Services.CreateScope())
+    if (builder.Environment.IsDevelopment())
     {
-        try
+        origins.Add("http://localhost:4200");
+    }
+    else
+    {
+        origins.Add("https://mango-coast-09be74403.2.azurestaticapps.net");
+    }
+
+
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("Default", policy =>
         {
-            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-            var songsElasticService = scope.ServiceProvider.GetRequiredService<SongsElasticService>();
-            var playlistsElasticService = scope.ServiceProvider.GetRequiredService<PlaylistsElasticService>();
-            var usersElasticService = scope.ServiceProvider.GetRequiredService<UsersElasticService>();
-            var genresElasticService = scope.ServiceProvider.GetRequiredService<GenresElasticService>();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            policy.WithOrigins(origins.ToArray())
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+        });
+    });
 
-            await db.Database.MigrateAsync();
 
-            List<Task> createIndexTasks = new()
+    var app = builder.Build();
+
+    app.UseExceptionHandlerMw();
+
+    // Configure the HTTP request pipeline.
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI();
+    }
+
+    app.UseHttpsRedirection();
+
+    app.UseStaticFiles();
+
+    app.UseCors("Default");
+
+    app.UseAuthentication();
+    app.UseAuthorization();
+
+    app.MapControllers();
+
+    await SeedData();
+
+    app.Run();
+
+
+    async Task SeedData()
+    {
+        using (var scope = app.Services.CreateScope())
+        {
+            try
+            {
+                var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+                var songsElasticService = scope.ServiceProvider.GetRequiredService<SongsElasticService>();
+                var playlistsElasticService = scope.ServiceProvider.GetRequiredService<PlaylistsElasticService>();
+                var usersElasticService = scope.ServiceProvider.GetRequiredService<UsersElasticService>();
+                var genresElasticService = scope.ServiceProvider.GetRequiredService<GenresElasticService>();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                await db.Database.MigrateAsync();
+
+                List<Task> createIndexTasks = new()
             {
                 songsElasticService.CreateIndexIfNotExistsAsync(ElasticIndex.SongsIndex),
                 playlistsElasticService.CreateIndexIfNotExistsAsync(ElasticIndex.PlaylistsIndex),
@@ -80,9 +109,9 @@ async Task SeedData()
                 genresElasticService.CreateIndexIfNotExistsAsync(ElasticIndex.GenresIndex)
             };
 
-            await Task.WhenAll(createIndexTasks);
+                await Task.WhenAll(createIndexTasks);
 
-            List<Task> reindexTasks = new()
+                List<Task> reindexTasks = new()
             {
                 songsElasticService.ReindexAllAsync(),
                 playlistsElasticService.ReindexAllAsync(),
@@ -90,13 +119,22 @@ async Task SeedData()
                 genresElasticService.ReindexAllAsync()
             };
 
-            await Task.WhenAll(reindexTasks);
-            await SeedRoles.Seed(roleManager);
-        }
-        catch (Exception ex)
-        {
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-            logger.LogError(ex, "An error occured during seeding data");
+                await Task.WhenAll(reindexTasks);
+                await SeedRoles.Seed(roleManager);
+            }
+            catch (Exception ex)
+            {
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+                logger.LogError(ex, "An error occured during seeding data");
+            }
         }
     }
+}
+catch (Exception ex)
+{
+    System.IO.File.WriteAllText(
+        Path.Combine(AppContext.BaseDirectory, "startup-error.txt"),
+        ex.ToString()
+    );
+    throw;
 }

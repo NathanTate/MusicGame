@@ -41,6 +41,8 @@ internal class AuthenticationService : IAuthenticationService
 
     public async Task<Result<string>> RegisterAsync(RegisterRequest model, CancellationToken cancellationToken = default)
     {
+        _logger.LogInformation($"Creating user moodel for {model.Email}");
+
         var user = new User()
         {
             Email = model.Email,
@@ -51,12 +53,14 @@ internal class AuthenticationService : IAuthenticationService
         var result = await _userManager.CreateAsync(user, model.Password);
         if (!result.Succeeded)
         {
+            _logger.LogError($"Error during creating of user {result.Errors}");
             return ResultHelper.ErrorsToResult(result.Errors);
         }
 
         var roleResult = await _userManager.AddToRoleAsync(user, nameof(Role.USER));
         if (!roleResult.Succeeded)
         {
+            _logger.LogError($"Error during role assignment to user {result.Errors}");
             return ResultHelper.ErrorsToResult(roleResult.Errors);
         }
 
