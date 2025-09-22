@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'songero.azurewebsites.net/api/'
+  apiUrl: 'https://songero.azurewebsites.net/api/'
 };
