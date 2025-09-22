@@ -18,7 +18,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddPresentation();
-builder.Services.AddApplicationLayer(builder.Configuration);
+builder.Services.AddApplicationLayer(builder.Configuration, builder.Environment);
 builder.Services.AddInfrastructureLayer(builder.Configuration);
 builder.Services.AddCors(options =>
 {

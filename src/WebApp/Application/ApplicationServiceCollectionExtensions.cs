@@ -12,11 +12,13 @@ using Application.Common.UserHelpers;
 using Elastic.Clients.Elasticsearch;
 using Application.Services.Elastic;
 using GeniusLyrics.NET;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 
 namespace Application;
 public static class ApplicationServiceCollectionExtensions
 {
-    public static IServiceCollection AddApplicationLayer(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddApplicationLayer(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment env)
     {
         var assembly = typeof(ApplicationServiceCollectionExtensions).Assembly;
         var jwtOptions = new JwtOptions();
@@ -26,9 +28,12 @@ public static class ApplicationServiceCollectionExtensions
         services.AddHttpContextAccessor();
         services.AddAutoMapper(assembly);
         services.AddValidatorsFromAssembly(assembly);
-        var settings = new ElasticsearchClientSettings(new Uri("http://localhost:9200"))
+
+        var elasticUri = env.IsDevelopment() ? "http://localhost:9200" : configuration["elasticUri"];
+        var settings = new ElasticsearchClientSettings(new Uri(elasticUri!))
                 .DisableDirectStreaming();
         services.AddSingleton(new ElasticsearchClient(settings));
+
         services.AddSingleton(new GeniusClient(configuration.GetValue<string>("GeniusApiKey") ?? ""));
         services.AddAuthentication(jwtOptions);
         services.AddServiceCollections();
